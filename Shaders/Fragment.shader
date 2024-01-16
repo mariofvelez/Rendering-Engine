@@ -13,6 +13,9 @@ out vec4 FragColor;
 
 in vec3 Normal;
 in vec3 FragPos;
+in vec2 TexCoord;
+
+uniform sampler2D uTexture;
 
 uniform vec3 viewPos;
 
@@ -43,7 +46,7 @@ void main()
 
 	result += calcDirLight(dirlight, norm, viewDir);
 
-	result *= vec3(0.388, 0.851, 0.035);
+	result *= texture(uTexture, TexCoord).xyz;// vec3(0.388, 0.851, 0.035);
 
 	FragColor = vec4(result, 1.0);
 }

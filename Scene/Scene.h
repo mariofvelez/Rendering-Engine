@@ -54,6 +54,7 @@ public:
 			RenderObject* ro = &m_RenderObjects[i];
 			ro->setModelUniform(shader);
 
+			glBindTexture(GL_TEXTURE_2D, ro->m_texture);
 			glBindVertexArray(ro->m_VAO);
 
 			glDrawElements(GL_TRIANGLES, ro->m_num_elements, GL_UNSIGNED_INT, 0);
@@ -67,7 +68,11 @@ public:
 
 	RenderObject* addRenderObject()
 	{
-		m_RenderObjects.emplace_back(ro_params.VAO, ro_params.num_elements);
+		m_RenderObjects.emplace_back(ro_params.VAO, ro_params.num_elements, ro_params.diffuse_texture);
+
+		shader->use();
+		m_RenderObjects[m_RenderObjects.size() - 1].setTextureLocations(shader);
+
 		return &m_RenderObjects[m_RenderObjects.size() - 1];
 	}
 

@@ -39,7 +39,7 @@ public:
 		}
 		catch (std::ifstream::failure e)
 		{
-			std::cout << "ERROR0000::SHADER::FILE_NOT_SUCCESSFULLY_READ" << std::endl;
+			std::cout << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ" << std::endl;
 		}
 		const char* v_shader_code = vertex_code.c_str();
 		const char* f_shader_code = fragment_code.c_str();

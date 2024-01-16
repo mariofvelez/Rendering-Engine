@@ -15,7 +15,7 @@ public:
 
 	float speed;
 
-	Camera(glm::vec3 pos, glm::vec3 front, glm::vec3 up) : m_pos(pos), m_front(front), m_up(up), view(1.0f), projection(1.0f), m_FOV(45.0f), speed(5.0f)
+	Camera(glm::vec3 pos, glm::vec3 front, glm::vec3 up) : m_pos(pos), m_front(front), m_up(up), view(1.0f), projection(1.0f), m_FOV(45.0f), speed(10.0f)
 	{
 		updateView();
 	}
@@ -35,6 +35,8 @@ public:
 	{
 		unsigned int view_loc = shader->uniformLoc("view");
 		glUniformMatrix4fv(view_loc, 1, GL_FALSE, glm::value_ptr(view));
+
+		shader->setVec3("viewPos", m_pos);
 	}
 
 	void uniformProjection(Shader* shader)
@@ -53,7 +55,11 @@ public:
 	}
 	void rotateYaw(float radians)
 	{
-
+		float angle = atan2f(m_front.y, m_front.x);
+		angle += radians;
+		m_front.x = cosf(angle);
+		m_front.y = sinf(angle);
+		m_front = glm::normalize(m_front);
 	}
 	void setFacingDirection(glm::vec3 dir)
 	{
@@ -63,14 +69,22 @@ public:
 	{
 		float camera_speed = speed * dt;
 
+		glm::vec3 forward = glm::normalize(m_front) * camera_speed;
+		glm::vec3 side = glm::normalize(glm::cross(forward, m_up)) * camera_speed;
+
+		if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+			rotateYaw(0.25 * camera_speed);
+		if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+			rotateYaw(-0.25 * camera_speed);
+
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-			move(glm::vec3(0.0f, camera_speed, 0.0f));
+			move(forward);
 		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-			move(glm::vec3(-camera_speed, 0.0f, 0.0f));
+			move(-side);
 		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-			move(glm::vec3(0.0f, -camera_speed, 0.0f));
+			move(-forward);
 		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-			move(glm::vec3(camera_speed, 0.0f, 0.0f));
+			move(side);
 		if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
 			move(glm::vec3(0.0f, 0.0f, camera_speed));
 		if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
