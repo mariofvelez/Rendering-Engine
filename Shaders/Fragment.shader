@@ -38,7 +38,7 @@ vec3 calcDirLight(DirLight light, vec3 normal, vec3 viewDir)
 	vec3 diffuse = diff * light.diffuse;
 
 	vec3 halfwayDir = normalize(lightDir + viewDir);
-	float spec = pow(max(dot(viewDir, halfwayDir), 0.0), 16.0); // change to material shininess
+	float spec = pow(max(dot(viewDir, halfwayDir), 0.0), 32); // change to material shininess
 	vec3 specular = 0.5 * spec * light.specular;
 
 	return (ambient + diffuse + specular);

@@ -12,9 +12,9 @@ class Chunk
 {
 public:
 	// chunk dimensions
-	static const unsigned int x_length = 16;
-	static const unsigned int y_length = 16;
-	static const unsigned int z_length = 16;
+	static const unsigned int x_length = 32;
+	static const unsigned int y_length = 32;
+	static const unsigned int z_length = 32;
 
 	// size of the chunk
 	static const unsigned int length = x_length * y_length * z_length;

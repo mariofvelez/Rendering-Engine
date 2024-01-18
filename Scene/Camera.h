@@ -17,7 +17,7 @@ public:
 	float yaw;
 	float pitch;
 
-	Camera(glm::vec3 pos, glm::vec3 front, glm::vec3 up) : m_pos(pos), m_front(front), m_up(up), view(1.0f), projection(1.0f), m_FOV(45.0f), speed(10.0f), pitch(0)
+	Camera(glm::vec3 pos, glm::vec3 front, glm::vec3 up) : m_pos(pos), m_front(front), m_up(up), view(1.0f), projection(1.0f), m_FOV(90.0f), speed(10.0f), pitch(0)
 	{
 		yaw = atan2f(m_front.y, m_front.x);
 		updateView();

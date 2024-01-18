@@ -65,18 +65,18 @@ float noise(float x, float y, float z) {
 }
 void generateTerrain(unsigned int* data, glm::vec3 offset)
 {
-	for (int pz = 15; pz >= 0; pz--)
+	for (int pz = Chunk::z_length - 1; pz >= 0; pz--)
 	{
-		for (unsigned int py = 0; py < 16; ++py)
+		for (unsigned int py = 0; py < Chunk::y_length; ++py)
 		{
-			for (unsigned int px = 0; px < 16; ++px)
+			for (unsigned int px = 0; px < Chunk::x_length; ++px)
 			{
-				unsigned int loc = pz * 256 + py * 16 + px;
-				float val = noise(px / 8.0f, py / 8.0f, pz / 8.0f);
+				unsigned int loc = pz * Chunk::y_length * Chunk::x_length + py * Chunk::x_length + px;
+				float val = noise(px / 16.0f, py / 16.0f, pz / 8.0f);
 
 				if (val > 0.0f)
 				{
-					if (pz < 15 && data[loc + 256] > 0)
+					if (pz < Chunk::z_length - 1 && data[loc + Chunk::y_length * Chunk::x_length] > 0)
 						data[loc] = 3;
 					else
 						data[loc] = 1;
@@ -159,7 +159,7 @@ int main()
 	Scene* scene = new Scene(camera);
 
 	// add light
-	DirLight* light = new DirLight(glm::vec3(1.0f, 1.0f, 0.7f), glm::vec3(0.0f, 0.0f, 0.0f), glm::normalize(glm::vec3(0.3f, 0.1f, -1.0f)), 0.5f, false);
+	DirLight* light = new DirLight(glm::vec3(1.0f, 1.0f, 0.7f), glm::vec3(0.0f, 0.0f, 0.0f), glm::normalize(glm::vec3(0.7f, 0.4f, -0.3f)), 0.5f, false);
 
 	light->uniformShader(scene->shader, "dirlight");
 
@@ -301,15 +301,17 @@ int main()
 
 		camera->processInput(window, delta_time);
 
-		glClearColor(0.1f, 0.2f, 0.3f, 1.0f);
+		glClearColor(0.61f, 0.88f, 1.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		float t1 = (float) glfwGetTime();
 		scene->RenderScene();
 		scene->shader->use();
 		glBindVertexArray(chunk->m_VAO);
-		glDrawElements(GL_TRIANGLES, chunk->m_indices.size(), GL_UNSIGNED_INT, 0); // fix: make chunk->num_elements have the same size
+		glDrawElements(GL_TRIANGLES, chunk->num_elements, GL_UNSIGNED_INT, 0); // fix: make chunk->num_elements have the same size
+		float t2 = (float) glfwGetTime();
 
-		std::cout << "time: " << delta_time << std::endl;
+		std::cout << "time: " << (t2 - t1) << std::endl;
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
