@@ -14,9 +14,12 @@ public:
 	glm::mat4 projection;
 
 	float speed;
+	float yaw;
+	float pitch;
 
-	Camera(glm::vec3 pos, glm::vec3 front, glm::vec3 up) : m_pos(pos), m_front(front), m_up(up), view(1.0f), projection(1.0f), m_FOV(45.0f), speed(10.0f)
+	Camera(glm::vec3 pos, glm::vec3 front, glm::vec3 up) : m_pos(pos), m_front(front), m_up(up), view(1.0f), projection(1.0f), m_FOV(45.0f), speed(10.0f), pitch(0)
 	{
+		yaw = atan2f(m_front.y, m_front.x);
 		updateView();
 	}
 	~Camera() {}
@@ -51,15 +54,22 @@ public:
 	}
 	void rotatePitch(float radians)
 	{
-
+		pitch += radians;
+		if (pitch < -glm::half_pi<float>())
+			pitch = -glm::half_pi<float>() + 0.0001f;
+		if (pitch > glm::half_pi<float>())
+			pitch = glm::half_pi<float>() - 0.0001f;
+		m_front.x = cosf(yaw) * cosf(pitch);
+		m_front.y = sinf(yaw) * cosf(pitch);
+		m_front.z = sinf(pitch);
 	}
 	void rotateYaw(float radians)
 	{
-		float angle = atan2f(m_front.y, m_front.x);
-		angle += radians;
-		m_front.x = cosf(angle);
-		m_front.y = sinf(angle);
-		m_front = glm::normalize(m_front);
+		yaw = atan2f(m_front.y, m_front.x);
+		yaw += radians;
+		m_front.x = cosf(yaw) * cosf(pitch);
+		m_front.y = sinf(yaw) * cosf(pitch);
+		m_front.z = sinf(pitch);
 	}
 	void setFacingDirection(glm::vec3 dir)
 	{
@@ -69,13 +79,17 @@ public:
 	{
 		float camera_speed = speed * dt;
 
-		glm::vec3 forward = glm::normalize(m_front) * camera_speed;
+		glm::vec3 forward = glm::normalize(glm::vec3(m_front.x, m_front.y, 0.0f)) * camera_speed;
 		glm::vec3 side = glm::normalize(glm::cross(forward, m_up)) * camera_speed;
 
 		if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
 			rotateYaw(0.25 * camera_speed);
 		if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
 			rotateYaw(-0.25 * camera_speed);
+		if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+			rotatePitch(0.25 * camera_speed);
+		if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+			rotatePitch(-0.25 * camera_speed);
 
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 			move(forward);
@@ -85,9 +99,9 @@ public:
 			move(-forward);
 		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 			move(side);
-		if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+		if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
 			move(glm::vec3(0.0f, 0.0f, camera_speed));
-		if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+		if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
 			move(glm::vec3(0.0f, 0.0f, -camera_speed));
 
 		updateView();

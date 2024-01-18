@@ -1,4 +1,4 @@
-#version 420 core
+#version 430 core
 
 struct DirLight
 {
@@ -14,8 +14,15 @@ out vec4 FragColor;
 in vec3 Normal;
 in vec3 FragPos;
 in vec2 TexCoord;
+in float BlockLocation;
 
 uniform sampler2D uTexture;
+uniform sampler2DArray uTextureArray;
+
+layout(std430, binding = 1) buffer blockBuffer
+{
+	uint data[16 * 16 * 16];
+};
 
 uniform vec3 viewPos;
 
@@ -46,7 +53,7 @@ void main()
 
 	result += calcDirLight(dirlight, norm, viewDir);
 
-	result *= texture(uTexture, TexCoord).xyz;// vec3(0.388, 0.851, 0.035);
+	result *= texture(uTextureArray, vec3(TexCoord, data[int(BlockLocation)] - 1)).xyz;// vec3(0.388, 0.851, 0.035);
 
 	FragColor = vec4(result, 1.0);
 }

@@ -57,7 +57,7 @@ public:
 			glBindTexture(GL_TEXTURE_2D, ro->m_texture);
 			glBindVertexArray(ro->m_VAO);
 
-			glDrawElements(GL_TRIANGLES, ro->m_num_elements, GL_UNSIGNED_INT, 0);
+			//glDrawElements(GL_TRIANGLES, ro->m_num_elements, GL_UNSIGNED_INT, 0);
 		}
 	}
 
