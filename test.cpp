@@ -194,17 +194,25 @@ int main()
 	ro->move(0.0f, 0.0f, 0.0f); */
 
 	// chunk test
-	std::string filenames[] = {"res/grass2.png", "res/sand.png", "res/stone.png", "res/snow.png"};
-	Chunk::createTextureArray(filenames, 4, terrain->terrain_shader);
+	std::string filenames[] = {
+		"res/grass2.png",
+		"res/sand.png",
+		"res/stone.png",
+		"res/snow.png",
+		"res/mud.png",
+		"res/magma.png",
+		"res/darkstone.png"
+	};
+	Chunk::createTextureArray(filenames, 7, terrain->terrain_shader);
 	Chunk::createVertexBuffer();
 
-	for (int x = 0; x < 10; ++x)
+	for (int x = -2; x < 2; ++x)
 	{
-		for (int y = 0; y < 10; ++y)
+		for (int y = -2; y < 2; ++y)
 		{
 			for (int z = 0; z < 4; ++z)
 			{
-				std::cout << "loading chunk: " << x << ", " << y << ", " << z << std::endl;
+				//std::cout << "loading chunk: " << x << ", " << y << ", " << z << std::endl;
 				terrain->loadChunk(x, y, z);
 			}
 		}
@@ -254,7 +262,7 @@ int main()
 		//glDrawElements(GL_TRIANGLES, chunk->num_elements, GL_UNSIGNED_INT, 0);
 		float t2 = (float) glfwGetTime();
 
-		std::cout << "time: " << (t2 - t1) << std::endl;
+		//std::cout << "time: " << (t2 - t1) << std::endl;
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
