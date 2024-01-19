@@ -16,7 +16,7 @@ in vec3 FragPos;
 in vec2 TexCoord;
 in float BlockLocation;
 
-uniform sampler2D uTexture;
+//uniform sampler2D uTexture;
 uniform sampler2DArray uTextureArray;
 
 layout(std430, binding = 1) buffer blockBuffer

@@ -31,7 +31,7 @@ public:
 
 	void updateProjection(float aspect)
 	{
-		projection = glm::perspective(glm::radians(m_FOV), aspect, 0.1f, 100.0f);
+		projection = glm::perspective(glm::radians(m_FOV), aspect, 0.1f, 1000.0f);
 	}
 
 	void uniformView(Shader* shader)
@@ -78,6 +78,8 @@ public:
 	void processInput(GLFWwindow* window, float dt)
 	{
 		float camera_speed = speed * dt;
+		if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
+			camera_speed *= 3.0f;
 
 		glm::vec3 forward = glm::normalize(glm::vec3(m_front.x, m_front.y, 0.0f)) * camera_speed;
 		glm::vec3 side = glm::normalize(glm::cross(forward, m_up)) * camera_speed;

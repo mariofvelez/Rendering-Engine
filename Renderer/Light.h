@@ -56,6 +56,7 @@ struct DirLight : public Light
 
 	void uniformShader(Shader* shader, const std::string& uniform_name)
 	{
+		shader->use();
 		shader->setVec3(uniform_name + ".direction", direction);
 
 		shader->setVec3(uniform_name + ".ambient", color.x * ambient_strength, color.y * ambient_strength, color.z * ambient_strength);

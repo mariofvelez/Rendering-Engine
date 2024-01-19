@@ -6,7 +6,7 @@
 #include "stb_image.h"
 
 #include "Scene/Scene.h"
-#include "Scene/Chunk.h"
+#include "Scene/Terrain.h"
 #include "Renderer/Light.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -18,76 +18,6 @@ void processInput(GLFWwindow* window)
 {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
-}
-
-int p[] = { 151,160,137,91,90,15,
-   131,13,201,95,96,53,194,233,7,225,140,36,103,30,69,142,8,99,37,240,21,10,23,
-   190, 6,148,247,120,234,75,0,26,197,62,94,252,219,203,117,35,11,32,57,177,33,
-   88,237,149,56,87,174,20,125,136,171,168, 68,175,74,165,71,134,139,48,27,166,
-   77,146,158,231,83,111,229,122,60,211,133,230,220,105,92,41,55,46,245,40,244,
-   102,143,54, 65,25,63,161, 1,216,80,73,209,76,132,187,208, 89,18,169,200,196,
-   135,130,116,188,159,86,164,100,109,198,173,186, 3,64,52,217,226,250,124,123,
-   5,202,38,147,118,126,255,82,85,212,207,206,59,227,47,16,58,17,182,189,28,42,
-   223,183,170,213,119,248,152, 2,44,154,163, 70,221,153,101,155,167, 43,172,9,
-   129,22,39,253, 19,98,108,110,79,113,224,232,178,185, 112,104,218,246,97,228,
-   251,34,242,193,238,210,144,12,191,179,162,241, 81,51,145,235,249,14,239,107,
-   49,192,214, 31,181,199,106,157,184, 84,204,176,115,121,50,45,127, 4,150,254,
-   138,236,205,93,222,114,67,29,24,72,243,141,128,195,78,66,215,61,156,180 };
-float fade(float t) { return t * t * t * (t * (t * 6 - 15) + 10); }
-float lerp(float t, float a, float b) { return a + t * (b - a); }
-float grad(int hash, float x, float y, float z) {
-	int h = hash & 15;
-	float u = h < 8 ? x : y,
-		v = h < 4 ? y : h == 12 || h == 14 ? x : z;
-	return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
-}
-float noise(float x, float y, float z) {
-	int X = (int)floor(x) & 255,
-		Y = (int)floor(y) & 255,
-		Z = (int)floor(z) & 255;
-	x -= floor(x);
-	y -= floor(y);
-	z -= floor(z);
-	float u = fade(x),
-		v = fade(y),
-		w = fade(z);
-	int A = p[X] + Y, AA = p[A] + Z, AB = p[A + 1] + Z,
-		B = p[X + 1] + Y, BA = p[B] + Z, BB = p[B + 1] + Z;
-
-	return lerp(w, lerp(v, lerp(u, grad(p[AA], x, y, z),
-		grad(p[BA], x - 1, y, z)),
-		lerp(u, grad(p[AB], x, y - 1, z),
-			grad(p[BB], x - 1, y - 1, z))),
-		lerp(v, lerp(u, grad(p[AA + 1], x, y, z - 1),
-			grad(p[BA + 1], x - 1, y, z - 1)),
-			lerp(u, grad(p[AB + 1], x, y - 1, z - 1),
-				grad(p[BB + 1], x - 1, y - 1, z - 1))));
-}
-void generateTerrain(unsigned int* data, glm::vec3 offset)
-{
-	for (int pz = Chunk::z_length - 1; pz >= 0; pz--)
-	{
-		for (unsigned int py = 0; py < Chunk::y_length; ++py)
-		{
-			for (unsigned int px = 0; px < Chunk::x_length; ++px)
-			{
-				unsigned int loc = pz * Chunk::y_length * Chunk::x_length + py * Chunk::x_length + px;
-				float val = noise(px / 16.0f, py / 16.0f, pz / 8.0f);
-
-				if (val > 0.0f)
-				{
-					if (pz < Chunk::z_length - 1 && data[loc + Chunk::y_length * Chunk::x_length] > 0)
-						data[loc] = 3;
-					else
-						data[loc] = 1;
-				}
-				else if (pz < 3)
-					data[loc] = 2;
-				else
-					data[loc] = 0;
-			}
-		}
-	}
 }
 
 unsigned int loadTexture(const char* filename)
@@ -153,15 +83,18 @@ int main()
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	
 	Camera* camera = new Camera(glm::vec3(0.0f, -30.0f, 5.0f),
-		glm::vec3(0.0f, 1.0f, 0.0f),
-		glm::vec3(0.0f, 0.0f, 1.0f));
+								glm::vec3(0.0f, 1.0f, 0.0f),
+								glm::vec3(0.0f, 0.0f, 1.0f));
 	
-	Scene* scene = new Scene(camera);
+	Terrain* terrain = new Terrain(camera);
+	
+	//Scene* scene = new Scene(camera);
 
 	// add light
-	DirLight* light = new DirLight(glm::vec3(1.0f, 1.0f, 0.7f), glm::vec3(0.0f, 0.0f, 0.0f), glm::normalize(glm::vec3(0.7f, 0.4f, -0.3f)), 0.5f, false);
+	DirLight* light = new DirLight(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::normalize(glm::vec3(0.7f, 0.4f, -0.3f)), 0.5f, false);
 
-	light->uniformShader(scene->shader, "dirlight");
+	light->uniformShader(terrain->terrain_shader, "dirlight");
+	/*light->uniformShader(scene->shader, "dirlight");
 
 	// add cube
 	float vertices[] = {
@@ -258,14 +191,26 @@ int main()
 	Scene::ro_params.num_elements = 36;
 
 	RenderObject* ro = scene->addRenderObject();
-	ro->move(0.0f, 0.0f, 0.0f);
+	ro->move(0.0f, 0.0f, 0.0f); */
 
 	// chunk test
-	std::string filenames[] = {"res/grass2.png", "res/sand.png", "res/stone.png"};
-	Chunk::createTextureArray(filenames, 3, scene->shader);
+	std::string filenames[] = {"res/grass2.png", "res/sand.png", "res/stone.png", "res/snow.png"};
+	Chunk::createTextureArray(filenames, 4, terrain->terrain_shader);
 	Chunk::createVertexBuffer();
 
-	Chunk* chunk = new Chunk();
+	for (int x = 0; x < 10; ++x)
+	{
+		for (int y = 0; y < 10; ++y)
+		{
+			for (int z = 0; z < 4; ++z)
+			{
+				std::cout << "loading chunk: " << x << ", " << y << ", " << z << std::endl;
+				terrain->loadChunk(x, y, z);
+			}
+		}
+	}
+
+	Chunk* chunk = new Chunk(glm::vec3(0.0f, 0.0f, 0.0f), 0);
 	srand(0);
 	for (unsigned int i = 0; i < Chunk::length; ++i)
 	{
@@ -275,13 +220,7 @@ int main()
 		else
 			chunk->m_data[i] = 0;
 	}
-	generateTerrain(chunk->m_data, chunk->m_offset);
 	chunk->updateMesh();
-
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, chunk->m_data_buffer);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(chunk->m_data), &chunk->m_data, GL_DYNAMIC_READ);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, chunk->m_data_buffer);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 	//unsigned int block_index;
 	//block_index = glGetProgramResourceIndex(scene->shader->m_ID, GL_SHADER_STORAGE_BLOCK, "blockBuffer");
@@ -305,10 +244,14 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		float t1 = (float) glfwGetTime();
-		scene->RenderScene();
+		/*scene->RenderScene();
 		scene->shader->use();
 		glBindVertexArray(chunk->m_VAO);
-		glDrawElements(GL_TRIANGLES, chunk->num_elements, GL_UNSIGNED_INT, 0); // fix: make chunk->num_elements have the same size
+		glDrawElements(GL_TRIANGLES, chunk->num_elements, GL_UNSIGNED_INT, 0); // fix: make chunk->num_elements have the same size*/
+		terrain->draw();
+		//terrain->terrain_shader->use();
+		//terrain->terrain_shader->setVec3("offset", 0.0f, 0.0f, 0.0f);
+		//glDrawElements(GL_TRIANGLES, chunk->num_elements, GL_UNSIGNED_INT, 0);
 		float t2 = (float) glfwGetTime();
 
 		std::cout << "time: " << (t2 - t1) << std::endl;
@@ -318,8 +261,9 @@ int main()
 	}
 
 	delete(camera);
-	delete(scene);
+	//delete(scene);
 	delete(light);
+	delete(terrain);
 
 	glfwTerminate();
 	return 0;

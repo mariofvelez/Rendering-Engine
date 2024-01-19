@@ -36,7 +36,7 @@ public:
 		glGenTextures(1, &texture);
 		glBindTexture(GL_TEXTURE_2D_ARRAY, texture);
 
-		const unsigned int data_size = 64 * 48 * 4 * 3;
+		const unsigned int data_size = 64 * 48 * 4 * 4;
 		unsigned char data[data_size];
 
 		std::cout << "data size: " << data_size << std::endl;
@@ -62,7 +62,7 @@ public:
 			stbi_image_free(tex_data);
 		}
 
-		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, 64, 48, 3, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, 64, 48, length, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
 		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -150,7 +150,11 @@ public:
 
 	glm::vec3 m_offset; // offset position
 
-	Chunk() : m_offset(0.0f, 0.0f, 0.0f), m_EBO(0), num_elements(0), m_VAO(0)
+	int m_ID;
+
+	bool is_empty;
+
+	Chunk(glm::vec3 offset, int ID) : m_offset(offset), m_EBO(0), num_elements(0), m_VAO(0), m_ID(ID), is_empty(false)
 	{
 		for (unsigned int i = 0; i < length; ++i)
 		{
@@ -194,7 +198,7 @@ public:
 		}
 		index_buffer_size *= 6;
 		num_elements = index_buffer_size;
-		std::cout << "counted elements: " << num_elements << std::endl;
+		//std::cout << "counted elements: " << num_elements << std::endl;
 
 		// update index buffer
 		m_indices.clear();
@@ -231,7 +235,13 @@ public:
 			}
 		}
 
-		std::cout << "added elements: " << m_indices.size() << std::endl;
+		//std::cout << "added elements: " << m_indices.size() << std::endl;
+
+		if (m_indices.size() == 0)
+		{
+			is_empty = true;
+			return;
+		}
 
 		glGenVertexArrays(1, &m_VAO);
 		glBindVertexArray(m_VAO);
@@ -254,6 +264,11 @@ public:
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indices.size() * sizeof(unsigned int), &m_indices[0], GL_STATIC_DRAW);
+
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_data_buffer);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(m_data), &m_data, GL_DYNAMIC_READ);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, m_data_buffer);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}
 private:
 	struct FaceIndex
