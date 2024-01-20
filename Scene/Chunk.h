@@ -161,13 +161,13 @@ public:
 			m_data[i] = 0;
 		}
 
-		glGenBuffers(1, &m_data_buffer);
-
 	}
 	~Chunk()
 	{
-		if(!is_empty)
+		if (!is_empty)
+		{
 			deleteBufferData();
+		}
 	}
 	/**
 	creates data of this chunk on the GPU
@@ -200,6 +200,9 @@ public:
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indices.size() * sizeof(unsigned int), &m_indices[0], GL_STATIC_DRAW);
+
+
+		glGenBuffers(1, &m_data_buffer);
 
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_data_buffer);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(m_data), &m_data, GL_DYNAMIC_READ);

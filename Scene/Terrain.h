@@ -11,13 +11,21 @@ class Terrain
 {
 	std::vector<Chunk*> chunks;
 
+	std::vector<Chunk*> chunks_to_load;
+	std::vector<Chunk*> chunks_to_unload;
+
+	bool chunks_ready_to_delete;
+
 public:
 	Shader* terrain_shader;
 	Camera* camera;
 
-	Terrain(Camera* camera) : camera(camera)
+	Terrain(Camera* camera) : camera(camera), chunks_ready_to_delete(false)
 	{
 		chunks.reserve(1000);
+
+		chunks_to_load.reserve(100);
+		chunks_to_unload.reserve(100);
 
 		terrain_shader = new Shader("Shaders/Vertex.shader", "Shaders/Fragment.shader");
 		terrain_shader->use();
@@ -113,6 +121,9 @@ public:
 		const unsigned int magma = 6;
 		const unsigned int darkstone = 7;
 
+		const float cave_mask_min = 0.2f;
+		const float cave_mask_max = 0.6f;
+
 		srand(chunk->m_ID);
 
 		for (int py = 0; py < Chunk::y_length; ++py)
@@ -123,31 +134,32 @@ public:
 				int x = px + chunk->m_offset.x;
 
 				
-				//float height = perlin2D(x + 27.3f, y + 37.7f, 256, 128);
-				//height += perlin2D(x + 783.4f, y + 349.7f, 128, 64);
-				//height += perlin2D(x + 587.3f, y + 149.9f, 64, 16);
-				//height += perlin2D(x + 383.7f, y + 421.1f, 16, 16);
-				//height -= 64.0f;
+				float height = perlin2D(x + 27.3f, y + 37.7f, 256, 128);
+				height += perlin2D(x + 783.4f, y + 349.7f, 128, 64);
+				height += perlin2D(x + 587.3f, y + 149.9f, 64, 16);
+				height += perlin2D(x + 383.7f, y + 421.1f, 16, 8);
+				height -= 64.0f;
 
-				float steepness = perlin2D(x, y, 128, 2.0f);
+				float cave_mask = perlin2D(x + 6.7, y + 8.3, 128, 1.0f);
+
+				/*float steepness = perlin2D(x, y, 128, 2.0f);
 				if (steepness < 1.0f)
 					steepness = 1.0f;
 
 				float moisture = perlin2D(x, y, 64, 1.0f);
-				moisture += perlin2D(x + 6.7, y + 8.3, 26, 0.5f);
+				moisture += perlin2D(x + 6.7, y + 8.3, 26, 0.5f);*/
 
 				for (int pz = Chunk::z_length - 1; pz >= 0; pz--)
 				{
 					int z = pz + chunk->m_offset.z;
 					int loc = pz * Chunk::y_length * Chunk::x_length + py * Chunk::x_length + px;
 
-					float offsetx = perlin3D(x, y, z, 32, 16.0f);
-					offsetx += perlin3D(x + 17.3f, y + 55.8f, z + 29.5f, 8, 4.0f);
+					float cave = perlin3D(x, y, z, 32, 16.0f);
+					cave += perlin3D(x + 17.3f, y + 55.8f, z + 29.5f, 8, 4.0f);
+					/*offsetx += perlin3D(x + 17.3f, y + 55.8f, z + 29.5f, 8, 4.0f);
 					offsetx += x;
-					float offsety = perlin3D(x + 83.7f, y + 21.3f, z + 15.9f, 32, 16.0f);
 					offsety += perlin3D(x + 11.9f, y + 45.7f, z + 123.1f, 8, 4.0f);
 					offsety += y;
-					float offsetz = perlin3D(x + 31.7f, y + 19.5f, z + 113.7f, 32, 16.0f);
 					offsetz += perlin3D(x + 231.7f, y + 57.7f, z + 41.9f, 8, 2.0f);
 					offsetz += z + 16;
 
@@ -155,9 +167,9 @@ public:
 					height += perlin2D(offsetx + 783.4f, offsety + 349.7f, 128, 64) * steepness;
 					height += perlin2D(offsetx + 587.3f, offsety + 149.9f, 64, 16) * steepness;
 					height += perlin2D(offsetx + 383.7f, offsety + 421.1f, 16, 16) * steepness;
-					height -= 32.0f;
+					height -= 32.0f;*/
 
-					if (offsetz < height)
+					/*if (offsetz < height)
 					{
 						if (offsetz + 3 > height)
 						{
@@ -175,26 +187,56 @@ public:
 							else
 								chunk->m_data[loc] = stone;
 						}
+					}*/
+					if (z < 28.0f)
+						chunk->m_data[loc] = mud;
+					else
+						chunk->m_data[loc] = 0;
+
+					float cave_thresh = 0.0f;
+					if (cave_mask > cave_mask_max)
+						cave_thresh = 8.0f;
+					else if (cave_mask > cave_mask_min)
+					{
+						float t = cave_mask - cave_mask_min;
+						t *= cave_mask_max - cave_mask_min;
+						cave_thresh = lerp(t, 0.0f, 8.0f);
 					}
+						
+					if (z < height && cave > cave_thresh)
+					{
+						if (z + 3 > height && z < 32.0f)
+							chunk->m_data[loc] = sand;
+						else if (z + 1 > height && z < 48.0f)
+							chunk->m_data[loc] = grass;
+						else
+							chunk->m_data[loc] = stone;
+					}
+					
 				}
 			}
 		}
 	}
-
+	int getChunkID(int x, int y, int z)
+	{
+		return (z - 64) * 128 * 128 + (y - 64) * 128 + (x - 64);
+	}
 	void loadChunk(int px, int py, int pz)
 	{
-		Chunk* chunk = new Chunk(glm::vec3((float)px * Chunk::x_length, (float)py * Chunk::y_length, (float)pz * Chunk::z_length),
-								 pz * Chunk::y_length * Chunk::x_length + py * Chunk::x_length + px);
+		Chunk* chunk = new Chunk(glm::vec3((float)px * Chunk::x_length,
+							               (float)py * Chunk::y_length,
+										   (float)pz * Chunk::z_length),
+								 getChunkID(px, py, pz));
 
 		generateTerrain(chunk);
 		chunk->updateMesh();
-		chunk->createBufferData();
+		//chunk->createBufferData();
 
-		chunks.emplace_back(chunk);
+		chunks_to_load.emplace_back(chunk);
 	}
 	void unloadChunk(int x, int y, int z)
 	{
-		int id = z * (int) Chunk::y_length * (int) Chunk::x_length + y * (int) Chunk::x_length + x;
+		int id = getChunkID(x, y, z);
 		unloadChunk(id);
 	}
 	void unloadChunk(int id)
@@ -204,14 +246,27 @@ public:
 			if (chunks[i]->m_ID == id)
 			{
 				Chunk* chunk = chunks[i];
-				chunks.erase(chunks.begin() + i);
-				delete(chunk);
+
+				unloadChunk(chunk);
+				//chunks.erase(chunks.begin() + i);
+				//i--;
+				//delete(chunk);
 			}
 		}
 	}
+	void unloadChunk(Chunk* chunk)
+	{
+		bool chunk_found = false;
+		for (unsigned int i = 0; i < chunks_to_unload.size(); ++i)
+			if (chunks_to_unload[i]->m_ID == chunk->m_ID)
+				chunk_found = true;
+
+		if (!chunk_found)
+			chunks_to_unload.emplace_back(chunk);
+	}
 	bool isChunkLoaded(int x, int y, int z)
 	{
-		int id = z * Chunk::y_length * Chunk::x_length + y * Chunk::x_length + x;
+		int id = getChunkID(x, y, z);
 		for (unsigned int i = 0; i < chunks.size(); ++i)
 			if (chunks[i]->m_ID == id)
 				return true;
@@ -223,22 +278,25 @@ public:
 		int y_coord = (int)floor(camera->m_pos.y / Chunk::y_length);
 		int z_coord = (int)floor(camera->m_pos.z / Chunk::z_length);
 
-		for (unsigned int i = 0; i < chunks.size(); ++i)
+		if (!chunks_ready_to_delete)
 		{
-			glm::vec3 chunk_center = chunks[i]->m_offset + glm::vec3(16.0f, 16.0f, 16.0f); // change to chunk::x_length / 2.0f etc
-			float dist = glm::distance(chunk_center, camera->m_pos);
-			if (dist > 7 * 32)
+			for (unsigned int i = 0; i < chunks.size(); ++i)
 			{
-				unloadChunk(chunks[i]->m_ID);
-				i--;
+				glm::vec3 chunk_center = chunks[i]->m_offset + glm::vec3(16.0f, 16.0f, 16.0f); // change to chunk::x_length / 2.0f etc
+				float dist = glm::distance(chunk_center, camera->m_pos);
+				if (dist > 7 * 32)
+				{
+					unloadChunk(chunks[i]);
+				}
 			}
+			chunks_ready_to_delete = true;
 		}
-
+		
 		for (int z = z_coord - 2; z <= z_coord + 2; ++z)
 		{
-			for (int y = y_coord - 2; y <= y_coord + 2; ++y)
+			for (int y = y_coord - 4; y <= y_coord + 4; ++y)
 			{
-				for (int x = x_coord - 2; x <= x_coord + 2; ++x)
+				for (int x = x_coord - 4; x <= x_coord + 4; ++x)
 				{
 					if (!isChunkLoaded(x, y, z))
 					{
@@ -247,19 +305,39 @@ public:
 				}
 			}
 		}
+	}
+	void updateChunks()
+	{
+		
+		if (chunks_ready_to_delete)
+		{
+			for (unsigned int i = 0; i < chunks_to_unload.size(); ++i)
+			{
+				Chunk* chunk = chunks_to_unload[i];
+				chunks.erase(std::remove(chunks.begin(), chunks.end(), chunk), chunks.end());
+			}
+			while (chunks_to_unload.size() > 0)
+			{
+				Chunk* chunk = chunks_to_unload[0];
+				chunks_to_unload.erase(chunks_to_unload.begin());
+				delete(chunk);
+			}
+			chunks_to_unload.clear();
+			chunks_ready_to_delete = false;
+		}
 
-		bool is_chunk_loaded = isChunkLoaded(x_coord, y_coord, z_coord);
-		std::cout << "chunk: " << x_coord << ", " << y_coord << ", " << z_coord;
-		if (is_chunk_loaded)
-			std::cout << " | loaded";
-		std::cout << std::endl;
-
-
+		for (unsigned int i = 0; i < chunks_to_load.size(); ++i)
+		{
+			Chunk* chunk = chunks_to_load[i];
+			chunk->createBufferData();
+			chunks.emplace_back(chunk);
+		}
+		chunks_to_load.clear();
 	}
 
 	void draw()
 	{
-		updateLoadedChunks();
+		updateChunks();
 
 		glEnable(GL_CULL_FACE);
 		glCullFace(GL_FRONT);
@@ -269,12 +347,23 @@ public:
 
 		unsigned int model_loc = terrain_shader->uniformLoc("model");
 
+		glm::mat4 cam_transform = camera->projection * camera->view;
+
+		std::cout << "chunks: " << chunks.size() << std::endl;
+
 		for (unsigned int i = 0; i < chunks.size(); ++i)
 		{
 			if (chunks[i]->is_empty)
 				continue;
-			glm::vec3 chunk_center = chunks[i]->m_offset + glm::vec3(16.0f, 16.0f, 16.0f); // change to chunk::x_length / 2.0f etc
-			float dist = glm::distance(chunk_center, camera->m_pos);
+			glm::vec3 center = chunks[i]->m_offset + glm::vec3(16.0f, 16.0f, 16.0f); // change to chunk::x_length / 2.0f etc
+
+			// chunk culling
+			//glm::vec4 chunk_pos = glm::vec4(center.x, center.y, center.z, 1.0f);
+			//glm::vec4 pos = cam_transform * chunk_pos;
+
+			//std::cout << "pos: " << pos.x << ", " << pos.y << ", " << pos.z << std::endl;
+
+			float dist = glm::distance(center, camera->m_pos);
 			if (dist > 5 * 32)
 				continue;
 

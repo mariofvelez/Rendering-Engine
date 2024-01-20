@@ -1,6 +1,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <thread>
 #include <stdlib.h>
 
 #include "stb_image.h"
@@ -82,7 +83,7 @@ int main()
 
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	
-	Camera* camera = new Camera(glm::vec3(0.0f, -30.0f, 5.0f),
+	Camera* camera = new Camera(glm::vec3(0.0f, -30.0f, 68.0f),
 								glm::vec3(0.0f, 1.0f, 0.0f),
 								glm::vec3(0.0f, 0.0f, 1.0f));
 	
@@ -230,6 +231,22 @@ int main()
 	}
 	chunk->updateMesh();
 
+	bool running = true;
+	bool* running_ptr = &running;
+	std::thread update_chunk_thread([running_ptr, terrain]() {
+
+		using namespace std::literals::chrono_literals;
+
+		std::cout << "chunk thread started" << std::endl;
+
+		while (*running_ptr)
+		{
+			//std::cout << "updating chunks" << std::endl;
+			terrain->updateLoadedChunks();
+			std::this_thread::sleep_for(0.1s);
+		}
+	});
+
 	//unsigned int block_index;
 	//block_index = glGetProgramResourceIndex(scene->shader->m_ID, GL_SHADER_STORAGE_BLOCK, "blockBuffer");
 
@@ -262,11 +279,14 @@ int main()
 		//glDrawElements(GL_TRIANGLES, chunk->num_elements, GL_UNSIGNED_INT, 0);
 		float t2 = (float) glfwGetTime();
 
-		//std::cout << "time: " << (t2 - t1) << std::endl;
+		std::cout << "time: " << (t2 - t1) << std::endl;
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
+
+	running = false;
+	update_chunk_thread.join();
 
 	delete(camera);
 	//delete(scene);
