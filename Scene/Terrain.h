@@ -352,8 +352,6 @@ public:
 
 		glm::mat4 cam_transform = camera->projection * camera->view;
 
-		std::cout << "chunks: " << chunks.size() << std::endl;
-
 		for (unsigned int i = 0; i < chunks.size(); ++i)
 		{
 			if (chunks[i]->is_empty)

@@ -237,8 +237,6 @@ int main()
 
 		using namespace std::literals::chrono_literals;
 
-		std::cout << "chunk thread started" << std::endl;
-
 		while (*running_ptr)
 		{
 			//std::cout << "updating chunks" << std::endl;
@@ -268,7 +266,7 @@ int main()
 		glClearColor(0.61f, 0.88f, 1.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		float t1 = (float) glfwGetTime();
+		//float t1 = (float) glfwGetTime();
 		/*scene->RenderScene();
 		scene->shader->use();
 		glBindVertexArray(chunk->m_VAO);
@@ -277,9 +275,9 @@ int main()
 		//terrain->terrain_shader->use();
 		//terrain->terrain_shader->setVec3("offset", 0.0f, 0.0f, 0.0f);
 		//glDrawElements(GL_TRIANGLES, chunk->num_elements, GL_UNSIGNED_INT, 0);
-		float t2 = (float) glfwGetTime();
+		//float t2 = (float) glfwGetTime();
 
-		std::cout << "time: " << (t2 - t1) << std::endl;
+		//std::cout << "time: " << (t2 - t1) << std::endl;
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
