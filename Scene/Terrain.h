@@ -34,6 +34,9 @@ public:
 
 		camera->updateProjection(9.0f / 6.0f);
 		camera->uniformProjection(terrain_shader);
+
+		for (unsigned int i = 0; i < 256; ++i)
+			p[256 + i] = p[i];
 	}
 	int p[512] = { 151,160,137,91,90,15,
 	   131,13,201,95,96,53,194,233,7,225,140,36,103,30,69,142,8,99,37,240,21,10,23,
@@ -128,16 +131,15 @@ public:
 
 		for (int py = 0; py < Chunk::y_length; ++py)
 		{
-			int y = py + chunk->m_offset.y;
+			float y = (float) py + chunk->m_offset.y;
 			for (int px = 0; px < Chunk::x_length; ++px)
 			{
-				int x = px + chunk->m_offset.x;
+				float x = (float) px + chunk->m_offset.x;
 
-				
-				float height = perlin2D(x + 27.3f, y + 37.7f, 256, 128);
-				height += perlin2D(x + 783.4f, y + 349.7f, 128, 64);
-				height += perlin2D(x + 587.3f, y + 149.9f, 64, 16);
-				height += perlin2D(x + 383.7f, y + 421.1f, 16, 8);
+				float height = perlin2D(x + 27.3f, y + 37.7f, 256.0f, 128);
+				height += perlin2D(x + 783.4f, y + 349.7f, 128.0f, 64);
+				height += perlin2D(x + 587.3f, y + 149.9f, 64.0f, 16);
+				height += perlin2D(x + 383.7f, y + 421.1f, 16.0f, 8);
 				height -= 64.0f;
 
 				float cave_mask = perlin2D(x + 6.7, y + 8.3, 128, 1.0f);
@@ -151,7 +153,7 @@ public:
 
 				for (int pz = Chunk::z_length - 1; pz >= 0; pz--)
 				{
-					int z = pz + chunk->m_offset.z;
+					float z = (float) pz + chunk->m_offset.z;
 					int loc = pz * Chunk::y_length * Chunk::x_length + py * Chunk::x_length + px;
 
 					float cave = perlin3D(x, y, z, 32, 16.0f);
@@ -192,6 +194,7 @@ public:
 						chunk->m_data[loc] = mud;
 					else
 						chunk->m_data[loc] = 0;
+						
 
 					float cave_thresh = 0.0f;
 					if (cave_mask > cave_mask_max)
