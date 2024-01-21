@@ -208,6 +208,10 @@ public:
 		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(m_data), &m_data, GL_DYNAMIC_READ);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, m_data_buffer);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+		num_elements = m_indices.size();
+		m_indices.clear();
+		m_indices.shrink_to_fit();
 	}
 	/**
 	update data of this chunk on the GPU
@@ -300,6 +304,10 @@ public:
 		if (m_indices.size() == 0)
 		{
 			is_empty = true;
+
+			num_elements = m_indices.size();
+			m_indices.clear();
+			m_indices.shrink_to_fit();
 		}
 	}
 private:

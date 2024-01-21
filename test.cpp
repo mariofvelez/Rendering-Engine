@@ -95,6 +95,7 @@ int main()
 	DirLight* light = new DirLight(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::normalize(glm::vec3(0.7f, 0.4f, -0.3f)), 0.5f, false);
 
 	light->uniformShader(terrain->terrain_shader, "dirlight");
+	
 	/*light->uniformShader(scene->shader, "dirlight");
 
 	// add cube
@@ -219,7 +220,7 @@ int main()
 		}
 	}
 
-	Chunk* chunk = new Chunk(glm::vec3(0.0f, 0.0f, 0.0f), 0);
+	/*Chunk* chunk = new Chunk(glm::vec3(0.0f, 0.0f, 0.0f), 0);
 	srand(0);
 	for (unsigned int i = 0; i < Chunk::length; ++i)
 	{
@@ -229,7 +230,7 @@ int main()
 		else
 			chunk->m_data[i] = 0;
 	}
-	chunk->updateMesh();
+	chunk->updateMesh();*/
 
 	bool running = true;
 	bool* running_ptr = &running;
@@ -265,6 +266,17 @@ int main()
 
 		glClearColor(0.61f, 0.88f, 1.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		/*float angle = current_frame / 10.0f;
+		float side = cosf(angle);
+		float vertical = sinf(angle);
+
+		light->direction.x = cosf(0.5f) * side;
+		light->direction.y = sinf(0.5f) * side;
+		light->direction.z = vertical;
+
+		terrain->terrain_shader->use();
+		light->uniformShader(terrain->terrain_shader, "dirlight");*/
 
 		//float t1 = (float) glfwGetTime();
 		/*scene->RenderScene();
