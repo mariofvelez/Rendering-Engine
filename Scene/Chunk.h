@@ -36,7 +36,7 @@ public:
 		glGenTextures(1, &texture);
 		glBindTexture(GL_TEXTURE_2D_ARRAY, texture);
 
-		const unsigned int data_size = 64 * 48 * 4 * 7;
+		const unsigned int data_size = 64 * 48 * 4 * 8;
 		unsigned char data[data_size];
 
 		std::cout << "data size: " << data_size << std::endl;

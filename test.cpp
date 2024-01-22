@@ -203,9 +203,10 @@ int main()
 		"res/snow.png",
 		"res/mud.png",
 		"res/magma.png",
-		"res/darkstone.png"
+		"res/darkstone.png",
+		"res/log.png"
 	};
-	Chunk::createTextureArray(filenames, 7, terrain->terrain_shader);
+	Chunk::createTextureArray(filenames, 8, terrain->terrain_shader);
 	Chunk::createVertexBuffer();
 
 	for (int x = -2; x < 2; ++x)

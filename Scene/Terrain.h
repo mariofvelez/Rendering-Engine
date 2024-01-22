@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <stdlib.h>
+#include <algorithm>
 
 #include "Chunk.h"
 #include "Camera.h"
@@ -127,6 +128,7 @@ public:
 		const unsigned int mud = 5;
 		const unsigned int magma = 6;
 		const unsigned int darkstone = 7;
+		const unsigned int log = 8;
 
 		const float cave_mask_min = 0.2f;
 		const float cave_mask_max = 0.6f;
@@ -148,6 +150,10 @@ public:
 
 				float cave_mask = perlin2D(x + 6.7, y + 8.3, 128, 1.0f);
 
+				bool is_log = rand() % 100 == 0 && height > 32.0f && height < 48.0f;
+				float log_bottom = height;
+				float log_top = height + 4.0f + (float)(rand() % 5);
+
 				/*float steepness = perlin2D(x, y, 128, 2.0f);
 				if (steepness < 1.0f)
 					steepness = 1.0f;
@@ -155,7 +161,7 @@ public:
 				float moisture = perlin2D(x, y, 64, 1.0f);
 				moisture += perlin2D(x + 6.7, y + 8.3, 26, 0.5f);*/
 
-				for (int pz = Chunk::z_length - 1; pz >= 0; pz--)
+				for (int pz = 0; pz < Chunk::z_length; pz++)
 				{
 					float z = (float) pz + chunk->m_offset.z;
 					int loc = pz * Chunk::y_length * Chunk::x_length + py * Chunk::x_length + px;
@@ -219,6 +225,10 @@ public:
 						else
 							chunk->m_data[loc] = stone;
 					}
+					else if (is_log && cave > cave_thresh && z >= log_bottom && z <= log_top)
+					{
+						chunk->m_data[loc] = log;
+					}
 					
 				}
 			}
@@ -231,9 +241,9 @@ public:
 	void loadChunk(int px, int py, int pz)
 	{
 		Chunk* chunk = new Chunk(glm::vec3((float)px * Chunk::x_length,
-							               (float)py * Chunk::y_length,
-										   (float)pz * Chunk::z_length),
-								 getChunkID(px, py, pz));
+			(float)py * Chunk::y_length,
+			(float)pz * Chunk::z_length),
+			getChunkID(px, py, pz));
 
 		generateTerrain(chunk);
 		chunk->updateMesh();
@@ -299,6 +309,7 @@ public:
 			chunks_ready_to_delete = true;
 		}
 		
+		std::vector<Chunk*> chunks_to_generate;
 		for (int z = z_coord - 2; z <= z_coord + 2; ++z)
 		{
 			for (int y = y_coord - 4; y <= y_coord + 4; ++y)
@@ -307,10 +318,25 @@ public:
 				{
 					if (!isChunkLoaded(x, y, z))
 					{
-						loadChunk(x, y, z);
+						Chunk* chunk = new Chunk(glm::vec3((float)x * Chunk::x_length,
+														   (float)y * Chunk::y_length,
+														   (float)z * Chunk::z_length),
+												 getChunkID(x, y, z));
+
+						chunks_to_generate.emplace_back(chunk);
 					}
 				}
 			}
+		}
+
+		std::sort(chunks_to_generate.begin(), chunks_to_generate.end(), [this](Chunk* a, Chunk* b) {return glm::distance(camera->m_pos, a->m_offset) < glm::distance(camera->m_pos, b->m_offset); });
+
+		for (unsigned int i = 0; i < chunks_to_generate.size(); ++i)
+		{
+			Chunk* chunk = chunks_to_generate[i];
+			generateTerrain(chunk);
+			chunk->updateMesh();
+			chunks_to_load.emplace_back(chunk);
 		}
 	}
 	void updateChunks()

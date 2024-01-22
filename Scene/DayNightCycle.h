@@ -51,7 +51,7 @@ public:
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sunEBO);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(sun_indices), sun_indices, GL_STATIC_DRAW);
 
-
+		
 	}
 	~DayNightCycle()
 	{
