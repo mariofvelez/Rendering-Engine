@@ -38,7 +38,10 @@ public:
 	{
 		unsigned int view_loc = shader->uniformLoc("view");
 		glUniformMatrix4fv(view_loc, 1, GL_FALSE, glm::value_ptr(view));
+	}
 
+	void uniformViewPos(Shader* shader)
+	{
 		shader->setVec3("viewPos", m_pos);
 	}
 

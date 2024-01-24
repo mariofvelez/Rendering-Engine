@@ -93,8 +93,6 @@ int main()
 
 	// add light
 	DirLight* light = new DirLight(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::normalize(glm::vec3(0.7f, 0.4f, -0.3f)), 0.5f, false);
-
-	light->uniformShader(terrain->terrain_shader, "dirlight");
 	
 	/*light->uniformShader(scene->shader, "dirlight");
 
@@ -250,6 +248,102 @@ int main()
 	//unsigned int block_index;
 	//block_index = glGetProgramResourceIndex(scene->shader->m_ID, GL_SHADER_STORAGE_BLOCK, "blockBuffer");
 
+	// Deferred rendering
+	unsigned int g_buffer;
+	glGenFramebuffers(1, &g_buffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, g_buffer);
+	unsigned int g_position, g_normal, g_color_spec;
+
+	// position buffer
+	glGenTextures(1, &g_position);
+	glBindTexture(GL_TEXTURE_2D, g_position);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, screen_width, screen_height, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_position, 0);
+
+	// normal buffer
+	glGenTextures(1, &g_normal);
+	glBindTexture(GL_TEXTURE_2D, g_normal);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, screen_width, screen_height, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, g_normal, 0);
+
+	// color and specular buffer
+	glGenTextures(1, &g_color_spec);
+	glBindTexture(GL_TEXTURE_2D, g_color_spec);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, screen_width, screen_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, g_color_spec, 0);
+
+	// atachments used for rendering
+	unsigned int attachments[3] = {
+		GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2
+	};
+	glDrawBuffers(3, attachments);
+
+	// add depth buffer
+	unsigned int rbo_depth;
+	glGenRenderbuffers(1, &rbo_depth);
+	glBindRenderbuffer(GL_RENDERBUFFER, rbo_depth);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, screen_width, screen_height);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo_depth);
+
+	// check if framebuffer is complete
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		std::cout << "G buffer is not complete!" << std::endl;
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	// quad
+	float quad_vertices[] = {
+		// positions   // texCoords
+		-1.0f,  1.0f,  0.0f, 1.0f,
+		-1.0f, -1.0f,  0.0f, 0.0f,
+		 1.0f, -1.0f,  1.0f, 0.0f,
+
+		-1.0f,  1.0f,  0.0f, 1.0f,
+		 1.0f, -1.0f,  1.0f, 0.0f,
+		 1.0f,  1.0f,  1.0f, 1.0f
+	};
+
+	unsigned int quadVAO;
+	glGenVertexArrays(1, &quadVAO);
+	glBindVertexArray(quadVAO);
+
+	unsigned int quadVBO;
+	glGenBuffers(1, &quadVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), &quad_vertices, GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+
+	unsigned int quad_indices[6] = {
+		0, 1, 2,
+		2, 3, 0
+	};
+
+	unsigned int quadEBO;
+	glGenBuffers(1, &quadEBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quadEBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(quad_indices), quad_indices, GL_STATIC_DRAW);
+
+	// lighting shader
+	Shader* lighting_shader = new Shader("Shaders/LightingVertex.shader", "Shaders/LightingFragment.shader");
+	lighting_shader->use();
+	lighting_shader->setInt("gPosition", 2);
+	lighting_shader->setInt("gNormal", 3);
+	lighting_shader->setInt("gAlbedoSpec", 4);
+
+	light->uniformShader(lighting_shader, "dirlight");
+
 	float delta_time = 0.0f;
 	float last_frame = 0.0f;
 
@@ -266,6 +360,11 @@ int main()
 		camera->processInput(window, delta_time);
 
 		glClearColor(0.61f, 0.88f, 1.0f, 1.0f);
+		//glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, g_buffer);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		/*float angle = current_frame / 10.0f;
@@ -280,17 +379,29 @@ int main()
 		light->uniformShader(terrain->terrain_shader, "dirlight");*/
 
 		//float t1 = (float) glfwGetTime();
-		/*scene->RenderScene();
-		scene->shader->use();
-		glBindVertexArray(chunk->m_VAO);
-		glDrawElements(GL_TRIANGLES, chunk->num_elements, GL_UNSIGNED_INT, 0); // fix: make chunk->num_elements have the same size*/
 		terrain->draw();
-		//terrain->terrain_shader->use();
-		//terrain->terrain_shader->setVec3("offset", 0.0f, 0.0f, 0.0f);
-		//glDrawElements(GL_TRIANGLES, chunk->num_elements, GL_UNSIGNED_INT, 0);
 		//float t2 = (float) glfwGetTime();
-
 		//std::cout << "time: " << (t2 - t1) << std::endl;
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		//glClearColor(0.61f, 0.88f, 1.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, g_position);
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, g_normal);
+		glActiveTexture(GL_TEXTURE4);
+		glBindTexture(GL_TEXTURE_2D, g_color_spec);
+
+		lighting_shader->use();
+		camera->uniformViewPos(lighting_shader);
+
+		glDisable(GL_CULL_FACE);
+
+		glBindVertexArray(quadVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glBindVertexArray(0);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -303,6 +414,7 @@ int main()
 	//delete(scene);
 	delete(light);
 	delete(terrain);
+	delete(lighting_shader);
 
 	glfwTerminate();
 	return 0;
