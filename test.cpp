@@ -242,7 +242,7 @@ int main()
 		while (*running_ptr)
 		{
 			//std::cout << "updating chunks" << std::endl;
-			terrain->updateLoadedChunks();
+			terrain->updateLoadedChunks(running_ptr);
 			std::this_thread::sleep_for(0.1s);
 		}
 	});

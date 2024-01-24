@@ -1,0 +1,11 @@
+1. SSAO from learnopengl
+2. shadow mapping with randomized poisson sampling
+3. trees similar to dynamic trees mod
+4. water mesh for each chunk either with 1 pass or 2 pass depth peeling
+5. HDR with bloom, imissive maps
+6. precipitation, heat, and height map for generating biomes
+7. compute shader terrain generation
+8. camera frustum culling
+9. day and night cycle with sky cubemap
+10. clouds
+11. weather cycle with rain, thunderstorms, sandstorms, and snow

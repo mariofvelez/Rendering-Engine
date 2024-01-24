@@ -164,10 +164,19 @@ public:
 				for (int pz = 0; pz < Chunk::z_length; pz++)
 				{
 					float z = (float) pz + chunk->m_offset.z;
+					if (z - 5 > height)
+						break;
+
 					int loc = pz * Chunk::y_length * Chunk::x_length + py * Chunk::x_length + px;
+					if (z < 10)
+					{
+						chunk->m_data[loc] = stone;
+						continue;
+					}
 
 					float cave = perlin3D(x, y, z, 32, 16.0f);
 					cave += perlin3D(x + 17.3f, y + 55.8f, z + 29.5f, 8, 4.0f);
+
 					/*offsetx += perlin3D(x + 17.3f, y + 55.8f, z + 29.5f, 8, 4.0f);
 					offsetx += x;
 					offsety += perlin3D(x + 11.9f, y + 45.7f, z + 123.1f, 8, 4.0f);
@@ -289,7 +298,7 @@ public:
 				return true;
 		return false;
 	}
-	void updateLoadedChunks()
+	void updateLoadedChunks(bool* running)
 	{
 		int x_coord = (int)floor(camera->m_pos.x / Chunk::x_length);
 		int y_coord = (int)floor(camera->m_pos.y / Chunk::y_length);
@@ -301,7 +310,7 @@ public:
 			{
 				glm::vec3 chunk_center = chunks[i]->m_offset + glm::vec3(16.0f, 16.0f, 16.0f); // change to chunk::x_length / 2.0f etc
 				float dist = glm::distance(chunk_center, camera->m_pos);
-				if (dist > 7 * 32)
+				if (dist > 12 * 32)
 				{
 					unloadChunk(chunks[i]);
 				}
@@ -312,9 +321,9 @@ public:
 		std::vector<Chunk*> chunks_to_generate;
 		for (int z = z_coord - 2; z <= z_coord + 2; ++z)
 		{
-			for (int y = y_coord - 4; y <= y_coord + 4; ++y)
+			for (int y = y_coord - 8; y <= y_coord + 8; ++y)
 			{
-				for (int x = x_coord - 4; x <= x_coord + 4; ++x)
+				for (int x = x_coord - 8; x <= x_coord + 8; ++x)
 				{
 					if (!isChunkLoaded(x, y, z))
 					{
@@ -329,14 +338,26 @@ public:
 			}
 		}
 
-		std::sort(chunks_to_generate.begin(), chunks_to_generate.end(), [this](Chunk* a, Chunk* b) {return glm::distance(camera->m_pos, a->m_offset) < glm::distance(camera->m_pos, b->m_offset); });
+		std::sort(chunks_to_generate.begin(), chunks_to_generate.end(), [this](Chunk* a, Chunk* b) {
+			glm::vec3 a_pos = glm::vec3(a->m_offset.x, a->m_offset.y, a->m_offset.z * 2.0f);
+			glm::vec3 b_pos = glm::vec3(b->m_offset.x, b->m_offset.y, b->m_offset.z * 2.0f);
+			return glm::distance(camera->m_pos, a_pos) < glm::distance(camera->m_pos, b_pos);
+		});
 
 		for (unsigned int i = 0; i < chunks_to_generate.size(); ++i)
 		{
-			Chunk* chunk = chunks_to_generate[i];
-			generateTerrain(chunk);
-			chunk->updateMesh();
-			chunks_to_load.emplace_back(chunk);
+			if (*running)
+			{
+				std::cout << "generating chunk | data: ";
+				float t1 = (float) glfwGetTime();
+				Chunk* chunk = chunks_to_generate[i];
+				generateTerrain(chunk);
+				float t2 = glfwGetTime();
+				chunk->updateMesh();
+				float t3 = glfwGetTime();
+				chunks_to_load.emplace_back(chunk);
+				std::cout << (t2 - t1) << "s | mesh: " << (t3 - t2) << "s" << std::endl;
+			}
 		}
 	}
 	void updateChunks()
@@ -387,16 +408,17 @@ public:
 			if (chunks[i]->is_empty)
 				continue;
 			glm::vec3 center = chunks[i]->m_offset + glm::vec3(16.0f, 16.0f, 16.0f); // change to chunk::x_length / 2.0f etc
+			float dist = glm::distance(center, camera->m_pos);
+			if (dist > 8 * 32)
+				continue;
 
 			// chunk culling
-			//glm::vec4 chunk_pos = glm::vec4(center.x, center.y, center.z, 1.0f);
-			//glm::vec4 pos = cam_transform * chunk_pos;
+			glm::vec4 chunk_pos = glm::vec4(center.x, center.y, center.z, 1.0f);
+			glm::vec4 pos = cam_transform * chunk_pos;
+			if (pos.z < -24)
+				continue;
 
 			//std::cout << "pos: " << pos.x << ", " << pos.y << ", " << pos.z << std::endl;
-
-			float dist = glm::distance(center, camera->m_pos);
-			if (dist > 5 * 32)
-				continue;
 
 			glm::mat4 model(1.0f);
 			model = glm::translate(model, chunks[i]->m_offset);
