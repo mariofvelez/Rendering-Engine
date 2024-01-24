@@ -1,4 +1,4 @@
-# Rendering-Engine
+# Voxel-Rendering-Engine
  A real-time voxel rendering engine inspired by Minecraft
 
 # Features
