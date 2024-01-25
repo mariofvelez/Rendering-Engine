@@ -18,10 +18,10 @@ layout(std430, binding = 1) buffer blockBuffer
 
 void main()
 {
-	gPosition = FragPos;
+	gPosition = FragPos; // view space
 
 	vec3 norm = normalize(Normal);
-	gNormal = norm;
+	gNormal = norm; // view space
 
 	gAlbedoSpec.rgb = texture(uTextureArray, vec3(TexCoord, data[int(BlockLocation)] - 1)).xyz;
 	gAlbedoSpec.a = 0.5f; // change to texture

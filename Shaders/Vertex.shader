@@ -16,9 +16,14 @@ uniform mat4 projection;
 
 void main()
 {
-	gl_Position = projection * view * model * vec4(aPos, 1.0);
-	Normal = mat3(model) * aNormal;
-	FragPos = vec3(model * vec4(aPos, 1.0));
+	// render in view space
+
+	mat4 local_to_view = view * model;
+
+	vec4 view_pos = local_to_view * vec4(aPos, 1.0); // position in view space
+	gl_Position = projection * view_pos;
+	Normal = mat3(local_to_view) * aNormal;
+	FragPos = view_pos.xyz;
 	TexCoord = aTexCoord;
 	BlockLocation = aBlockLocation;
 }

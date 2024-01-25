@@ -1,11 +1,19 @@
 1. SSAO from learnopengl
 2. shadow mapping with randomized poisson sampling
 3. trees similar to dynamic trees mod
-4. water mesh for each chunk either with 1 pass or 2 pass depth peeling
+4. water mesh for each chunk either with depth effect and flow map based on vertex information
 5. HDR with bloom, imissive maps
 6. precipitation, heat, and height map for generating biomes
 7. compute shader terrain generation
 8. camera frustum culling
 9. day and night cycle with sky cubemap
 10. clouds
-11. weather cycle with rain, thunderstorms, sandstorms, and snow
+11. weather cycle with rain, thunderstorms, sandstorms, and snow. rain could influence SSR
+12. screen space reflections
+13. use stencil buffer to not calculate sky and reflections for non-specular surfaces
+14. player AABB collision and controls with following camera
+15. mesh regeneration
+16. block breaking and placing
+17. multithreaded greedy meshing algorithm (does it matter? cost for rendering is lower with deferred shading, but could help if render distance is high)
+18. chunk LODs, chunks that render in further use less polys, but when the player gets closer it remeshes
+19. anti-aliasing technique

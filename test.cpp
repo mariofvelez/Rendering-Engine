@@ -3,6 +3,7 @@
 #include <iostream>
 #include <thread>
 #include <stdlib.h>
+#include <random>
 
 #include "stb_image.h"
 
@@ -10,6 +11,10 @@
 #include "Scene/Terrain.h"
 #include "Renderer/Light.h"
 
+float lerp(float a, float b, float t)
+{
+	return a + t * (b - a);
+}
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
 	glViewport(0, 0, width, height);
@@ -342,7 +347,64 @@ int main()
 	lighting_shader->setInt("gNormal", 3);
 	lighting_shader->setInt("gAlbedoSpec", 4);
 
-	light->uniformShader(lighting_shader, "dirlight");
+	light->uniformShader(lighting_shader, &camera->view, "dirlight");
+
+	// SSAO
+	std::uniform_real_distribution<float> rand_floats(0.0f, 1.0f);
+	std::default_random_engine generator;
+	std::vector<glm::vec3> ssao_kernel;
+	for (unsigned int i = 0; i < 16; ++i)
+	{
+		glm::vec3 sample(
+			rand_floats(generator) * 2.0f - 1.0f,
+			rand_floats(generator) * 2.0f - 1.0f,
+			rand_floats(generator)
+		);
+		sample = glm::normalize(sample);
+		sample *= rand_floats(generator);
+		float scale = (float)i / 16.0f;
+		scale = lerp(0.1f, 1.0f, scale * scale);
+		sample *= scale;
+		ssao_kernel.push_back(sample);
+
+		lighting_shader->setVec3("ssao_samples[" + std::to_string(i) + ']', sample);
+	}
+
+	std::vector<glm::vec3> ssao_noise;
+	for (unsigned int i = 0; i < 16; ++i)
+	{
+		glm::vec3 noise(
+			rand_floats(generator) * 2.0f - 1.0f,
+			rand_floats(generator) * 2.0f - 1.0f,
+			0.0f
+		);
+		ssao_noise.push_back(noise);
+	}
+
+	unsigned int noise_texture;
+	glGenTextures(1, &noise_texture);
+	glBindTexture(GL_TEXTURE_2D, noise_texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 4, 4, 0, GL_RGB, GL_FLOAT, &ssao_noise[0]);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	lighting_shader->setInt("ssaoNoise", 5);
+
+	// ssao buffer
+	unsigned int ssao_buffer;
+	glGenFramebuffers(1, &ssao_buffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, ssao_buffer);
+
+	unsigned int ssao_color;
+	glGenTextures(1, &ssao_color);
+	glBindTexture(GL_TEXTURE_2D, ssao_color);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, screen_width, screen_height, 0, GL_RED, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssao_color, 0);
 
 	float delta_time = 0.0f;
 	float last_frame = 0.0f;
@@ -359,8 +421,8 @@ int main()
 
 		camera->processInput(window, delta_time);
 
-		glClearColor(0.61f, 0.88f, 1.0f, 1.0f);
-		//glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		//glClearColor(0.61f, 0.88f, 1.0f, 1.0f);
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -393,9 +455,14 @@ int main()
 		glBindTexture(GL_TEXTURE_2D, g_normal);
 		glActiveTexture(GL_TEXTURE4);
 		glBindTexture(GL_TEXTURE_2D, g_color_spec);
+		glActiveTexture(GL_TEXTURE5);
+		glBindTexture(GL_TEXTURE_2D, noise_texture);
 
 		lighting_shader->use();
 		camera->uniformViewPos(lighting_shader);
+		camera->uniformProjection(lighting_shader);
+		camera->uniformView(lighting_shader);
+		light->uniformShader(lighting_shader, &camera->view, "dirlight");
 
 		glDisable(GL_CULL_FACE);
 

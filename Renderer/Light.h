@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include "Shader.h"
 
@@ -39,7 +40,7 @@ struct Light
 		color.z = b;
 	}
 
-	virtual void uniformShader(Shader* shader, const std::string& uniform_name)
+	virtual void uniformShader(Shader* shader, glm::mat4* view, const std::string& uniform_name)
 	{
 		
 	}
@@ -54,10 +55,11 @@ struct DirLight : public Light
 
 	~DirLight() {}
 
-	void uniformShader(Shader* shader, const std::string& uniform_name)
+	void uniformShader(Shader* shader, glm::mat4* view, const std::string& uniform_name)
 	{
+		glm::vec3 dir = glm::mat3(*view) * direction;
 		shader->use();
-		shader->setVec3(uniform_name + ".direction", direction);
+		shader->setVec3(uniform_name + ".direction", dir);
 
 		shader->setVec3(uniform_name + ".ambient", color.x * ambient_strength, color.y * ambient_strength, color.z * ambient_strength);
 		shader->setVec3(uniform_name + ".diffuse", color);
