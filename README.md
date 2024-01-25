@@ -4,4 +4,5 @@
 # Features
  - Multithreaded chunk loading
  - Perlin Noise terrain generation algorithm
- - Memory-optimized chunk rendering technique 
+ - Memory-optimized chunk rendering technique
+ - Deferred shading
