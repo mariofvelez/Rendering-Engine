@@ -36,7 +36,7 @@ public:
 		glGenTextures(1, &texture);
 		glBindTexture(GL_TEXTURE_2D_ARRAY, texture);
 
-		const unsigned int data_size = 64 * 48 * 4 * 8;
+		const unsigned int data_size = 64 * 48 * 4 * 10;
 		unsigned char data[data_size];
 
 		std::cout << "data size: " << data_size << std::endl;
@@ -64,9 +64,12 @@ public:
 
 		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_SRGB_ALPHA, 64, 48, length, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
+		// generate mipmap
+		glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+
 		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_LEVEL, 2);
 

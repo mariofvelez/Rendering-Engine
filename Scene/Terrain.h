@@ -129,6 +129,8 @@ public:
 		const unsigned int magma = 6;
 		const unsigned int darkstone = 7;
 		const unsigned int log = 8;
+		const unsigned int shallow_water = 9;
+		const unsigned int deep_water = 10;
 
 		const float cave_mask_min = 0.2f;
 		const float cave_mask_max = 0.6f;
@@ -164,7 +166,7 @@ public:
 				for (int pz = 0; pz < Chunk::z_length; pz++)
 				{
 					float z = (float) pz + chunk->m_offset.z;
-					if (z - 5 > height)
+					if (z - 5 > height && z > 28.0f)
 						break;
 
 					int loc = pz * Chunk::y_length * Chunk::x_length + py * Chunk::x_length + px;
@@ -174,6 +176,7 @@ public:
 						continue;
 					}
 
+					//float cave = 100;
 					float cave = perlin3D(x, y, z, 32, 16.0f);
 					cave += perlin3D(x + 17.3f, y + 55.8f, z + 29.5f, 8, 4.0f);
 
@@ -210,7 +213,12 @@ public:
 						}
 					}*/
 					if (z < 28.0f)
-						chunk->m_data[loc] = mud;
+					{
+						if (height < 20.0f)
+							chunk->m_data[loc] = deep_water;
+						else
+							chunk->m_data[loc] = shallow_water;
+					}
 					else
 						chunk->m_data[loc] = 0;
 						
@@ -231,6 +239,8 @@ public:
 							chunk->m_data[loc] = sand;
 						else if (z + 1 > height && z < 48.0f)
 							chunk->m_data[loc] = grass;
+						else if (z + 1 > height && z > 64.0f)
+							chunk->m_data[loc] = snow;
 						else
 							chunk->m_data[loc] = stone;
 					}
