@@ -11,7 +11,7 @@ uniform sampler2D ssaoNoise;
 uniform vec3 ssao_samples[16];
 uniform mat4 projection;
 
-const float ssao_radius = 1.0;
+const float ssao_radius = 2.0;
 const float ssao_bias = 0.025;
 
 const vec2 noiseScale = vec2(900.0 / 4.0, 600.0 / 4.0);

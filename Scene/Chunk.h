@@ -62,7 +62,7 @@ public:
 			stbi_image_free(tex_data);
 		}
 
-		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, 64, 48, length, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_SRGB_ALPHA, 64, 48, length, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
 		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -88,6 +88,7 @@ public:
 						// u: 0.0f, 0.25f, 0.5f, 0.75f, 1.0f
 						// v: 0.0f, 0.3333f, 0.6667f, 1.0f
 						// bottom
+						// position                       normal              albedo tex
 						0.0f + px, 0.0f + py, 0.0f + pz,  0.0f,  0.0f, -1.0f, 0.25f, 1.0f, block_location,
 						1.0f + px, 0.0f + py, 0.0f + pz,  0.0f,  0.0f, -1.0f, 0.5f,  1.0f, block_location,
 						1.0f + px, 1.0f + py, 0.0f + pz,  0.0f,  0.0f, -1.0f, 0.5f,  0.6666f, block_location,

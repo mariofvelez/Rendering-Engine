@@ -310,7 +310,7 @@ public:
 			{
 				glm::vec3 chunk_center = chunks[i]->m_offset + glm::vec3(16.0f, 16.0f, 16.0f); // change to chunk::x_length / 2.0f etc
 				float dist = glm::distance(chunk_center, camera->m_pos);
-				if (dist > 12 * 32)
+				if (dist > 7 * 32)
 				{
 					unloadChunk(chunks[i]);
 				}
@@ -321,9 +321,9 @@ public:
 		std::vector<Chunk*> chunks_to_generate;
 		for (int z = z_coord - 2; z <= z_coord + 2; ++z)
 		{
-			for (int y = y_coord - 8; y <= y_coord + 8; ++y)
+			for (int y = y_coord - 4; y <= y_coord + 4; ++y)
 			{
-				for (int x = x_coord - 8; x <= x_coord + 8; ++x)
+				for (int x = x_coord - 4; x <= x_coord + 4; ++x)
 				{
 					if (!isChunkLoaded(x, y, z))
 					{
@@ -348,7 +348,7 @@ public:
 		{
 			if (*running)
 			{
-				std::cout << "generating chunk | data: ";
+				//std::cout << "generating chunk | data: ";
 				float t1 = (float) glfwGetTime();
 				Chunk* chunk = chunks_to_generate[i];
 				generateTerrain(chunk);
@@ -356,7 +356,7 @@ public:
 				chunk->updateMesh();
 				float t3 = glfwGetTime();
 				chunks_to_load.emplace_back(chunk);
-				std::cout << (t2 - t1) << "s | mesh: " << (t3 - t2) << "s" << std::endl;
+				//std::cout << (t2 - t1) << "s | mesh: " << (t3 - t2) << "s" << std::endl;
 			}
 		}
 	}
@@ -409,7 +409,7 @@ public:
 				continue;
 			glm::vec3 center = chunks[i]->m_offset + glm::vec3(16.0f, 16.0f, 16.0f); // change to chunk::x_length / 2.0f etc
 			float dist = glm::distance(center, camera->m_pos);
-			if (dist > 8 * 32)
+			if (dist > 5 * 32)
 				continue;
 
 			// chunk culling

@@ -104,7 +104,7 @@ int main()
 	//Scene* scene = new Scene(camera);
 
 	// add light
-	DirLight* light = new DirLight(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::normalize(glm::vec3(0.7f, 0.4f, -0.3f)), 0.5f, false);
+	DirLight* light = new DirLight(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::normalize(glm::vec3(0.3f, 0.4f, -1.0f)), 0.2f, false);
 	
 	/*light->uniformShader(scene->shader, "dirlight");
 
@@ -461,6 +461,7 @@ int main()
 		// camera controls
 		camera->processInput(window, delta_time);
 
+		float t1 = (float) glfwGetTime();
 		//glClearColor(0.61f, 0.88f, 1.0f, 1.0f);
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
@@ -473,15 +474,9 @@ int main()
 
 		light->direction.x = cosf(0.5f) * side;
 		light->direction.y = sinf(0.5f) * side;
-		light->direction.z = vertical;
+		light->direction.z = vertical;*/
 
-		terrain->terrain_shader->use();
-		light->uniformShader(terrain->terrain_shader, "dirlight");*/
-
-		//float t1 = (float) glfwGetTime();
 		terrain->draw();
-		//float t2 = (float) glfwGetTime();
-		//std::cout << "time: " << (t2 - t1) << std::endl;
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		//glClearColor(0.61f, 0.88f, 1.0f, 1.0f);
@@ -520,6 +515,8 @@ int main()
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		
 		glBindVertexArray(0);
+		float t2 = (float) glfwGetTime();
+		std::cout << "time: " << (t2 - t1) << std::endl;
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

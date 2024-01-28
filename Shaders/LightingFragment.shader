@@ -18,6 +18,8 @@ uniform sampler2D gNormal;
 uniform sampler2D gAlbedoSpec;
 uniform sampler2D ssao;
 
+const float gamma = 2.2;
+
 vec3 calcDirLight(DirLight light, vec3 normal, vec3 viewDir, float ssao)
 {
 	vec3 lightDir = normalize(-light.direction);
@@ -49,6 +51,9 @@ void main()
 	result += calcDirLight(dirlight, normal, viewDir, ssao);
 	
 	result *= albedo_spec.xyz;
+
+	// gamma correction
+	result = pow(result, vec3(1.0 / gamma));
 
 	FragColor = albedo_spec.w == 1.0 ? vec4(0.61f, 0.88f, 1.0f, 1.0f) : vec4(result, 1.0);
 }

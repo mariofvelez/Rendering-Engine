@@ -1,5 +1,5 @@
-1. SSAO from learnopengl
-2. shadow mapping with randomized poisson sampling
+1. SSAO from learnopengl - done
+2. shadow mapping with randomized poisson sampling, cascaded shadow mapping (CSM)
 3. trees similar to dynamic trees mod
 4. water mesh for each chunk either with depth effect and flow map based on vertex information
 5. HDR with bloom, imissive maps
@@ -16,4 +16,5 @@
 16. block breaking and placing
 17. multithreaded greedy meshing algorithm (does it matter? cost for rendering is lower with deferred shading, but could help if render distance is high)
 18. chunk LODs, chunks that render in further use less polys, but when the player gets closer it remeshes
-19. anti-aliasing technique
+19. SMAA anti-aliasing
+20. player animation - walking, running, crouching, jumping, falling, swimming, diving, rowing, climbing, bow animations, sword animations, long sword animation, axe animation, pickaxe animation, drinking, eating
