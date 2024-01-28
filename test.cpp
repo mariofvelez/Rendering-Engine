@@ -107,7 +107,7 @@ int main()
 	//Scene* scene = new Scene(camera);
 
 	// add light
-	DirLight* light = new DirLight(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::normalize(glm::vec3(0.3f, 0.4f, -1.0f)), 0.1f, false);
+	DirLight* light = new DirLight(glm::vec3(5.0f, 5.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::normalize(glm::vec3(0.3f, 0.4f, -1.0f)), 0.01f, false);
 	
 	/*light->uniformShader(scene->shader, "dirlight");
 

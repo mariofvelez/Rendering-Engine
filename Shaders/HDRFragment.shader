@@ -14,7 +14,7 @@ const float exposure = 0.3;
 void main()
 {
 	vec3 hdr_color = texture(hdrColor, TexCoord).xyz;
-	hdr_color += texture(bloomColor, TexCoord).xyz * 0.2;
+	hdr_color += texture(bloomColor, TexCoord).xyz * 0.1;
 
 	// hdr tone mapping
 	vec3 result = vec3(1.0) - exp(-hdr_color * exposure);
