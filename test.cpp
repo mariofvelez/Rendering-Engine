@@ -10,6 +10,7 @@
 #include "Scene/Scene.h"
 #include "Scene/Terrain.h"
 #include "Renderer/Light.h"
+#include "Renderer/Bloom.h"
 
 #define G_POSITION_TEXTURE 2
 #define G_NORMAL_TEXTURE 3
@@ -18,6 +19,7 @@
 #define SSAO_BLUR_INPUT_TEXTURE 5
 #define SSAO_TEXTURE 5
 #define HDR_COLOR_TEXTURE 5
+#define BLOOM_COLOR_TEXTURE 6
 
 float lerp(float a, float b, float t)
 {
@@ -105,7 +107,7 @@ int main()
 	//Scene* scene = new Scene(camera);
 
 	// add light
-	DirLight* light = new DirLight(glm::vec3(5.0f, 5.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::normalize(glm::vec3(0.3f, 0.4f, -1.0f)), 0.1f, false);
+	DirLight* light = new DirLight(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::normalize(glm::vec3(0.3f, 0.4f, -1.0f)), 0.1f, false);
 	
 	/*light->uniformShader(scene->shader, "dirlight");
 
@@ -456,6 +458,30 @@ int main()
 	Shader* hdr_shader = new Shader("Shaders/LightingVertex.shader", "Shaders/HDRFragment.shader");
 	hdr_shader->use();
 	hdr_shader->setInt("hdrColor", HDR_COLOR_TEXTURE);
+	hdr_shader->setInt("bloomColor", BLOOM_COLOR_TEXTURE);
+
+	// bloom
+	BloomBuffer bloom_buffer;
+	glm::ivec2 src_viewport_size(screen_width, screen_height);
+	glm::vec2 src_viewport_size_float((float)screen_width, (float)screen_height);
+	Shader* bloom_downsample_shader = new Shader("Shaders/LightingVertex.shader", "Shaders/BloomDownsamplingFragment.shader");
+	Shader* bloom_upsample_shader = new Shader("Shaders/LightingVertex.shader", "Shaders/BloomUpsamplingFragment.shader");
+
+	const unsigned int num_bloom_mips = 5;
+	bool bloom_buffer_status = bloom_buffer.init(screen_width, screen_height, num_bloom_mips);
+	if (!bloom_buffer_status)
+	{
+		std::cout << "Failed to initialize bloom buffer!";
+		return 1;
+	}
+
+	const float bloom_filter_radius = 0.005f;
+
+	bloom_downsample_shader->use();
+	bloom_downsample_shader->setInt("srcTexture", 5);
+
+	bloom_upsample_shader->use();
+	bloom_upsample_shader->setInt("srcTexture", 5);
 
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D, g_position);
@@ -536,6 +562,57 @@ int main()
 
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
+		// bloom
+		bloom_buffer.bindForWriting();
+
+		const std::vector<BloomMip>& mip_chain = bloom_buffer.mipChain();
+
+		// downsample
+		bloom_downsample_shader->use();
+		bloom_downsample_shader->setVec2("srcResolution", src_viewport_size_float);
+
+		glActiveTexture(GL_TEXTURE5);
+		glBindTexture(GL_TEXTURE_2D, hdr_color);
+
+		for (unsigned int i = 0; i < mip_chain.size(); ++i)
+		{
+			const BloomMip& mip = mip_chain[i];
+			glViewport(0, 0, mip.size.x, mip.size.y);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mip.texture, 0);
+
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+
+			bloom_downsample_shader->setVec2("srcResolution", mip.size);
+
+			glBindTexture(GL_TEXTURE_2D, mip.texture);
+		}
+
+		// upsample
+		bloom_upsample_shader->use();
+		bloom_upsample_shader->setFloat("filterRadius", bloom_filter_radius);
+
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_ONE);
+		glBlendEquation(GL_FUNC_ADD);
+
+		for (int i = mip_chain.size() - 1; i > 0; --i)
+		{
+			const BloomMip& mip = mip_chain[i];
+			const BloomMip& next_mip = mip_chain[i - 1];
+
+			glActiveTexture(GL_TEXTURE5);
+			glBindTexture(GL_TEXTURE_2D, mip.texture);
+
+			glViewport(0, 0, next_mip.size.x, next_mip.size.y);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, next_mip.texture, 0);
+
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+		}
+
+		glDisable(GL_BLEND);
+
+		glViewport(0, 0, screen_width, screen_height);
+
 		// hdr and gamma
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glClear(GL_COLOR_BUFFER_BIT);
@@ -543,6 +620,8 @@ int main()
 
 		glActiveTexture(GL_TEXTURE5);
 		glBindTexture(GL_TEXTURE_2D, hdr_color);
+		glActiveTexture(GL_TEXTURE6);
+		glBindTexture(GL_TEXTURE_2D, mip_chain[0].texture);
 
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		

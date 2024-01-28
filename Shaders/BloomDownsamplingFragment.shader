@@ -10,8 +10,8 @@ uniform vec2 srcResolution;
 void main()
 {
 	vec2 src_tex_size = 1.0 / srcResolution;
-	float x = src_texel_size.x;
-	float y = src_texel_size.y;
+	float x = src_tex_size.x;
+	float y = src_tex_size.y;
 
 	vec3 a = texture(srcTexture, vec2(TexCoord.x - 2 * x, TexCoord.y + 2 * y)).rgb;
     vec3 b = texture(srcTexture, vec2(TexCoord.x, TexCoord.y + 2 * y)).rgb;

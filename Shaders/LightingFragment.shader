@@ -50,5 +50,5 @@ void main()
 	
 	result *= albedo_spec.xyz;
 
-	FragColor = albedo_spec.w == 1.0 ? vec4(1.0, 4.0, 10.0, 1.0f) : vec4(result, 1.0);
+	FragColor = albedo_spec.w == 1.0 ? vec4(0.5, 1.0, 1.5, 1.0f) : vec4(result, 1.0);
 }
