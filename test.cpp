@@ -17,6 +17,7 @@
 #define SSAO_NOISE_TEXTURE 5
 #define SSAO_BLUR_INPUT_TEXTURE 5
 #define SSAO_TEXTURE 5
+#define HDR_COLOR_TEXTURE 5
 
 float lerp(float a, float b, float t)
 {
@@ -285,7 +286,7 @@ int main()
 	// color and specular buffer
 	glGenTextures(1, &g_color_spec);
 	glBindTexture(GL_TEXTURE_2D, g_color_spec);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, screen_width, screen_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, screen_width, screen_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, g_color_spec, 0);
@@ -347,7 +348,19 @@ int main()
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quadEBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(quad_indices), quad_indices, GL_STATIC_DRAW);
 
-	// lighting shader
+	// lighting buffer
+	unsigned int lighting_buffer;
+	glGenFramebuffers(1, &lighting_buffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, lighting_buffer);
+
+	unsigned int hdr_color;
+	glGenTextures(1, &hdr_color);
+	glBindTexture(GL_TEXTURE_2D, hdr_color);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, screen_width, screen_height, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, hdr_color, 0);
+
 	Shader* lighting_shader = new Shader("Shaders/LightingVertex.shader", "Shaders/LightingFragment.shader");
 	lighting_shader->use();
 	lighting_shader->setInt("gPosition", G_POSITION_TEXTURE);
@@ -438,6 +451,10 @@ int main()
 	ssao_blur_shader->use();
 	ssao_blur_shader->setInt("ssaoInput", SSAO_BLUR_INPUT_TEXTURE);
 
+	Shader* hdr_shader = new Shader("Shaders/LightingVertex.shader", "Shaders/HDRFragment.shader");
+	hdr_shader->use();
+	hdr_shader->setInt("hdrColor", HDR_COLOR_TEXTURE);
+
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D, g_position);
 	glActiveTexture(GL_TEXTURE3);
@@ -463,10 +480,12 @@ int main()
 
 		float t1 = (float) glfwGetTime();
 		//glClearColor(0.61f, 0.88f, 1.0f, 1.0f);
+		glEnable(GL_DEPTH_TEST);
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, g_buffer);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 
 		/*float angle = current_frame / 10.0f;
 		float side = cosf(angle);
@@ -482,6 +501,7 @@ int main()
 		//glClearColor(0.61f, 0.88f, 1.0f, 1.0f);
 
 		glDisable(GL_CULL_FACE);
+		glDisable(GL_DEPTH_TEST);
 
 		// ssao
 		glBindFramebuffer(GL_FRAMEBUFFER, ssao_buffer);
@@ -504,8 +524,8 @@ int main()
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		// lighting
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glBindFramebuffer(GL_FRAMEBUFFER, lighting_buffer);
+		glClear(GL_COLOR_BUFFER_BIT);
 		lighting_shader->use();
 		light->uniformShader(lighting_shader, &camera->view, "dirlight");
 
@@ -513,10 +533,21 @@ int main()
 		glBindTexture(GL_TEXTURE_2D, ssao_blur);
 
 		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		// hdr and gamma
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glClear(GL_COLOR_BUFFER_BIT);
+		hdr_shader->use();
+
+		glActiveTexture(GL_TEXTURE5);
+		glBindTexture(GL_TEXTURE_2D, hdr_color);
+
+		glDrawArrays(GL_TRIANGLES, 0, 6);
 		
 		glBindVertexArray(0);
 		float t2 = (float) glfwGetTime();
 		std::cout << "time: " << (t2 - t1) << std::endl;
+		//std::cout << "error: " << glGetError() << std::endl;
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
