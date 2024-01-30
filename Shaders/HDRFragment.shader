@@ -9,7 +9,7 @@ uniform sampler2D bloomColor;
 
 const float gamma = 2.2;
 
-const float exposure = 0.3;
+const float exposure = 1.0;
 
 void main()
 {
