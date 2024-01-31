@@ -17,11 +17,13 @@ class Terrain
 
 	bool chunks_ready_to_delete;
 
+	glm::mat4 test_capture;
+
 public:
 	Shader* terrain_shader;
 	Camera* camera;
 
-	Terrain(Camera* camera) : camera(camera), chunks_ready_to_delete(false)
+	Terrain(Camera* camera) : camera(camera), chunks_ready_to_delete(false), test_capture(1.0f)
 	{
 		chunks.reserve(1000);
 
@@ -320,7 +322,7 @@ public:
 			{
 				glm::vec3 chunk_center = chunks[i]->m_offset + glm::vec3(16.0f, 16.0f, 16.0f); // change to chunk::x_length / 2.0f etc
 				float dist = glm::distance(chunk_center, camera->m_pos);
-				if (dist > 9 * 32)
+				if (dist > 10 * 32)
 				{
 					unloadChunk(chunks[i]);
 				}
@@ -331,9 +333,9 @@ public:
 		std::vector<Chunk*> chunks_to_generate;
 		for (int z = z_coord - 2; z <= z_coord + 2; ++z)
 		{
-			for (int y = y_coord - 6; y <= y_coord + 6; ++y)
+			for (int y = y_coord - 5; y <= y_coord + 5; ++y)
 			{
-				for (int x = x_coord - 6; x <= x_coord + 6; ++x)
+				for (int x = x_coord - 5; x <= x_coord + 5; ++x)
 				{
 					if (!isChunkLoaded(x, y, z))
 					{
@@ -399,6 +401,11 @@ public:
 		chunks_to_load.clear();
 	}
 
+	void updateTestCapture(glm::mat4 mat)
+	{
+		test_capture = mat;
+	}
+
 	void draw()
 	{
 		updateChunks();
@@ -413,20 +420,43 @@ public:
 
 		glm::mat4 cam_transform = camera->projection * camera->view;
 
+		glm::vec3 cam_forward_tangent = glm::normalize(glm::cross(camera->m_front, glm::vec3(0.0f, 0.0f, 1.0f)));
+
+		glm::vec3 cam_forward_bitangent = glm::normalize(glm::cross(camera->m_front, cam_forward_tangent));
+
 		for (unsigned int i = 0; i < chunks.size(); ++i)
 		{
 			if (chunks[i]->is_empty)
 				continue;
 			glm::vec3 center = chunks[i]->m_offset + glm::vec3(16.0f, 16.0f, 16.0f); // change to chunk::x_length / 2.0f etc
-			float dist = glm::distance(center, camera->m_pos);
-			if (dist > 8 * 32)
-				continue;
+			//float dist = glm::distance(center, camera->m_pos);
+			//if (dist > 8 * 32)
+			//	continue;
+
+			// move towards center
+			glm::vec3 dir_tangent = cam_forward_tangent * glm::dot(center - camera->m_pos, cam_forward_tangent);
+			glm::vec3 dir_bitangent = cam_forward_bitangent * glm::dot(center - camera->m_pos, cam_forward_bitangent);
+			center -= dir_tangent * 1.0f;
+			center -= dir_bitangent * 1.0f;
+			center += 32.0f * glm::normalize(camera->m_front);
 
 			// chunk culling
-			glm::vec4 chunk_pos = glm::vec4(center.x, center.y, center.z, 1.0f);
-			glm::vec4 pos = cam_transform * chunk_pos;
-			if (pos.z < -24)
+			glm::vec4 pos = cam_transform * glm::vec4(center.x, center.y, center.z, 1.0);
+			center = glm::vec3(pos.x, pos.y, pos.z);
+			center /= pos.w;
+			//if (center.z < -1.0f)
+			//	continue;
+			if (center.z > 1.0f)
 				continue;
+			if (center.x < -1.0f)
+				continue;
+			if (center.x > 1.0f)
+				continue;
+			if (center.y > 1.0f)
+				continue;
+			if (center.y < -1.0f)
+				continue;
+
 
 			//std::cout << "pos: " << pos.x << ", " << pos.y << ", " << pos.z << std::endl;
 

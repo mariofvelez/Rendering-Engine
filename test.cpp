@@ -490,6 +490,8 @@ int main()
 	glActiveTexture(GL_TEXTURE4);
 	glBindTexture(GL_TEXTURE_2D, g_color_spec);
 
+	terrain->updateTestCapture(camera->projection * camera->view);
+
 	float delta_time = 0.0f;
 	float last_frame = 0.0f;
 

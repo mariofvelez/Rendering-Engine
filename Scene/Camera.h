@@ -19,7 +19,7 @@ public:
 	float yaw;
 	float pitch;
 
-	Camera(glm::vec3 pos, glm::vec3 front, glm::vec3 up) : m_pos(pos), m_front(front), m_up(up), view(1.0f), projection(1.0f), m_FOV(90.0f), speed(10.0f), pitch(0), near(0.1f), far(500.0f)
+	Camera(glm::vec3 pos, glm::vec3 front, glm::vec3 up) : m_pos(pos), m_front(front), m_up(up), view(1.0f), projection(1.0f), m_FOV(60.0f), speed(10.0f), pitch(0), near(0.1f), far(500.0f)
 	{
 		yaw = atan2f(m_front.y, m_front.x);
 		updateView();
@@ -80,9 +80,9 @@ public:
 	{
 
 	}
-	void updateCSM(int num_splits, glm::ivec2 resolution, glm::mat4* shadow_map_matrices, DirLight* light)
+	void updateCSM(Shader* shader, glm::ivec2 resolution, glm::mat4* shadow_map_matrices, DirLight* light)
 	{
-		int m = num_splits + 1; // number of planes
+		int m = 4; // number of planes
 
 		std::vector<float> plane_depths;
 		plane_depths.reserve(m);
@@ -95,6 +95,8 @@ public:
 			float Ci_uniform = near + (far - near) * (float)i / (float)m;
 			float Ci = (Ci_log + Ci_uniform) * 0.5f;
 			plane_depths.emplace_back(Ci);
+
+			shader->setFloat("cascaded_depths[" + std::to_string(Ci) + "]", Ci);
 		}
 		plane_depths.emplace_back(far);
 
@@ -121,7 +123,7 @@ public:
 
 		// update matrices
 		glm::vec3 dir = light->direction;
-		for (int i = 0; i < num_splits; ++i)
+		for (int i = 0; i < 3; ++i)
 		{
 			// find bounding box
 			float left = frustum_vertices[i * 4].x;
