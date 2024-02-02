@@ -80,7 +80,7 @@ public:
 	{
 
 	}
-	void updateCSM(Shader* shader, glm::ivec2 resolution, glm::mat4* shadow_map_matrices, DirLight* light)
+	void updateCSM(Shader* shader, glm::mat4* shadow_map_matrices, DirLight* light)
 	{
 		int m = 4; // number of planes
 

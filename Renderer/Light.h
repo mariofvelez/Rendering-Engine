@@ -56,7 +56,10 @@ struct DirLight : public Light
 	unsigned int shadow_width = 512;
 	unsigned int shadow_height = 512;
 
-	DirLight(glm::vec3 color, glm::vec3 position, glm::vec3 direction, float ambient_strength, bool casts_shadow) : Light(LightType::DIRECTIONAL_LIGHT, color, position, direction, ambient_strength, casts_shadow) {}
+	glm::mat4* shadow_matrices;
+	int num_cascades;
+
+	DirLight(glm::vec3 color, glm::vec3 position, glm::vec3 direction, float ambient_strength, bool casts_shadow) : num_cascades(0), Light(LightType::DIRECTIONAL_LIGHT, color, position, direction, ambient_strength, casts_shadow) {}
 
 	~DirLight() {}
 
@@ -92,6 +95,9 @@ struct DirLight : public Light
 
 	void createCascadedShadowBuffer(int num_cascades)
 	{
+		this->num_cascades = num_cascades;
+		shadow_matrices = new glm::mat4[num_cascades];
+
 		glGenFramebuffers(1, &shadow_fbo);
 		glBindFramebuffer(GL_FRAMEBUFFER, shadow_fbo);
 

@@ -17,14 +17,18 @@ class Terrain
 
 	bool chunks_ready_to_delete;
 
-	glm::mat4 test_capture;
+	Camera* test_capture;
 
 public:
 	Shader* terrain_shader;
 	Camera* camera;
 
-	Terrain(Camera* camera) : camera(camera), chunks_ready_to_delete(false), test_capture(1.0f)
+	Terrain(Camera* camera) : camera(camera), chunks_ready_to_delete(false)
 	{
+		test_capture = new Camera(glm::vec3(0.0f, -30.0f, 68.0f),
+								  glm::vec3(0.0f, 1.0f, 0.0f),
+								  glm::vec3(0.0f, 0.0f, 1.0f));
+
 		chunks.reserve(1000);
 
 		chunks_to_load.reserve(100);
@@ -38,12 +42,15 @@ public:
 		camera->updateProjection(9.0f / 6.0f);
 		camera->uniformProjection(terrain_shader);
 
+		test_capture->updateProjection(9.0f / 6.0f);
+
 		for (unsigned int i = 0; i < 256; ++i)
 			p[256 + i] = p[i];
 	}
 	~Terrain()
 	{
 		delete(terrain_shader);
+		delete(test_capture);
 	}
 	int p[512] = { 151,160,137,91,90,15,
 	   131,13,201,95,96,53,194,233,7,225,140,36,103,30,69,142,8,99,37,240,21,10,23,
@@ -322,7 +329,7 @@ public:
 			{
 				glm::vec3 chunk_center = chunks[i]->m_offset + glm::vec3(16.0f, 16.0f, 16.0f); // change to chunk::x_length / 2.0f etc
 				float dist = glm::distance(chunk_center, camera->m_pos);
-				if (dist > 10 * 32)
+				if (dist > 8 * 32)
 				{
 					unloadChunk(chunks[i]);
 				}
@@ -401,9 +408,12 @@ public:
 		chunks_to_load.clear();
 	}
 
-	void updateTestCapture(glm::mat4 mat)
+	void updateTestCapture()
 	{
-		test_capture = mat;
+		test_capture->m_pos = camera->m_pos;
+		test_capture->m_front = camera->m_front;
+		test_capture->view = camera->view;
+		test_capture->projection = camera->projection;
 	}
 
 	void draw()
@@ -418,27 +428,37 @@ public:
 
 		unsigned int model_loc = terrain_shader->uniformLoc("model");
 
-		glm::mat4 cam_transform = camera->projection * camera->view;
+		glm::mat4 cam_transform = test_capture->projection * test_capture->view;//camera->projection * camera->view;
 
-		glm::vec3 cam_forward_tangent = glm::normalize(glm::cross(camera->m_front, glm::vec3(0.0f, 0.0f, 1.0f)));
+		//glm::vec3 cam_forward_tangent = glm::normalize(glm::cross(test_capture->m_front, glm::vec3(0.0f, 0.0f, 1.0f)));
 
-		glm::vec3 cam_forward_bitangent = glm::normalize(glm::cross(camera->m_front, cam_forward_tangent));
+		//glm::vec3 cam_forward_bitangent = glm::normalize(glm::cross(test_capture->m_front, cam_forward_tangent));
+
+		int chunks_rendered = 0;
+		int chunks_checked = 0;
+
+		float cull_time = 0;
 
 		for (unsigned int i = 0; i < chunks.size(); ++i)
 		{
 			if (chunks[i]->is_empty)
 				continue;
+
+			float t1 = (float)glfwGetTime();
+
 			glm::vec3 center = chunks[i]->m_offset + glm::vec3(16.0f, 16.0f, 16.0f); // change to chunk::x_length / 2.0f etc
 			//float dist = glm::distance(center, camera->m_pos);
 			//if (dist > 8 * 32)
 			//	continue;
 
 			// move towards center
-			glm::vec3 dir_tangent = cam_forward_tangent * glm::dot(center - camera->m_pos, cam_forward_tangent);
-			glm::vec3 dir_bitangent = cam_forward_bitangent * glm::dot(center - camera->m_pos, cam_forward_bitangent);
-			center -= dir_tangent * 1.0f;
-			center -= dir_bitangent * 1.0f;
-			center += 32.0f * glm::normalize(camera->m_front);
+			//glm::vec3 dir_tangent = cam_forward_tangent * glm::dot(center - test_capture->m_pos, cam_forward_tangent);
+			//glm::vec3 dir_bitangent = cam_forward_bitangent * glm::dot(center - test_capture->m_pos, cam_forward_bitangent);
+			//center -= dir_tangent * 0.1f;
+			//center -= dir_bitangent * 1.0f;
+			center += 48.0f * glm::normalize(test_capture->m_front);
+
+			chunks_checked++;
 
 			// chunk culling
 			glm::vec4 pos = cam_transform * glm::vec4(center.x, center.y, center.z, 1.0);
@@ -446,6 +466,10 @@ public:
 			center /= pos.w;
 			//if (center.z < -1.0f)
 			//	continue;
+
+			float t2 = (float)glfwGetTime();
+			cull_time += t2 - t1;
+
 			if (center.z > 1.0f)
 				continue;
 			if (center.x < -1.0f)
@@ -457,7 +481,7 @@ public:
 			if (center.y < -1.0f)
 				continue;
 
-
+			chunks_rendered++;
 			//std::cout << "pos: " << pos.x << ", " << pos.y << ", " << pos.z << std::endl;
 
 			glm::mat4 model(1.0f);
@@ -471,5 +495,7 @@ public:
 			glBindVertexArray(chunks[i]->m_VAO);
 			glDrawElements(GL_TRIANGLES, chunks[i]->num_elements, GL_UNSIGNED_INT, 0);
 		}
+
+		std::cout << "rendered: " << chunks_rendered << " / " << chunks_checked << " time: " << cull_time << " | ";
 	}
 };

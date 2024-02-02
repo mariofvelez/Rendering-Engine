@@ -490,16 +490,37 @@ int main()
 	glActiveTexture(GL_TEXTURE4);
 	glBindTexture(GL_TEXTURE_2D, g_color_spec);
 
-	terrain->updateTestCapture(camera->projection * camera->view);
+	// cascaded shadow map
+	light->createCascadedShadowBuffer(3);
+
+	terrain->updateTestCapture();
 
 	float delta_time = 0.0f;
 	float last_frame = 0.0f;
 
+	float delta_time_list[100];
+	for (unsigned int i = 0; i < 100; ++i)
+		delta_time_list[i] = 0;
+	int dt_index = 0;
+	float dt_avg = 0;
+
 	glEnable(GL_DEPTH_TEST);
+
+	bool is_c_pressed = false;
 
 	while (!glfwWindowShouldClose(window))
 	{
 		processInput(window);
+
+		bool key_c = glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS;
+
+		terrain->updateTestCapture();
+		if (is_c_pressed != key_c) // key changed
+		{
+			//std::cout << "captured camera" << std::endl;
+		}
+
+		is_c_pressed = key_c;
 
 		float current_frame = (float) glfwGetTime();
 		delta_time = current_frame - last_frame;
@@ -553,6 +574,22 @@ int main()
 
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
+		// cascaded shadow map
+		/*
+		* for each cascade
+		* - determine which chunks are visible occluders
+		* - set near and far planes closest together for precision
+		* - render all chunks to the cascade buffer
+		*/
+		camera->updateCSM(lighting_shader, light->shadow_matrices, light);
+
+		for (int i = 0; i < light->num_cascades; ++i)
+		{
+			glm::mat4& view = light->shadow_matrices[i];
+
+			// terrain->draw(view);
+		}
+
 		// lighting
 		glBindFramebuffer(GL_FRAMEBUFFER, lighting_buffer);
 		glClear(GL_COLOR_BUFFER_BIT);
@@ -563,6 +600,8 @@ int main()
 		glBindTexture(GL_TEXTURE_2D, ssao_blur);
 
 		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		float t2 = (float)glfwGetTime();
 
 		// bloom
 		bloom_buffer.bindForWriting();
@@ -628,8 +667,17 @@ int main()
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		
 		glBindVertexArray(0);
-		float t2 = (float) glfwGetTime();
-		std::cout << "time: " << (t2 - t1) << std::endl;
+		
+
+		delta_time_list[dt_index] = t2 - t1;
+		dt_index++;
+		dt_index = dt_index % 100;
+		dt_avg = 0;
+		for (unsigned int i = 0; i < 100; ++i)
+			dt_avg += delta_time_list[i];
+		dt_avg *= 0.01f;
+
+		std::cout << "time avg: " << dt_avg << std::endl;
 		//std::cout << "error: " << glGetError() << std::endl;
 
 		glfwSwapBuffers(window);
