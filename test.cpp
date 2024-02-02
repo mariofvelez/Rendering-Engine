@@ -12,6 +12,8 @@
 #include "Renderer/Light.h"
 #include "Renderer/Bloom.h"
 
+#include "Debug.h"
+
 #define G_POSITION_TEXTURE 2
 #define G_NORMAL_TEXTURE 3
 #define G_ALBEDO_SPEC_TEXTURE 4
@@ -529,7 +531,7 @@ int main()
 		// camera controls
 		camera->processInput(window, delta_time);
 
-		float t1 = (float) glfwGetTime();
+		debug_start(glfwGetTime(), 0);
 		//glClearColor(0.61f, 0.88f, 1.0f, 1.0f);
 		glEnable(GL_DEPTH_TEST);
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -601,7 +603,7 @@ int main()
 
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
-		float t2 = (float)glfwGetTime();
+		debug_end(glfwGetTime(), 0);
 
 		// bloom
 		bloom_buffer.bindForWriting();
@@ -669,7 +671,7 @@ int main()
 		glBindVertexArray(0);
 		
 
-		delta_time_list[dt_index] = t2 - t1;
+		delta_time_list[dt_index] = debug_time(0);
 		dt_index++;
 		dt_index = dt_index % 100;
 		dt_avg = 0;
@@ -677,7 +679,7 @@ int main()
 			dt_avg += delta_time_list[i];
 		dt_avg *= 0.01f;
 
-		std::cout << "time avg: " << dt_avg << std::endl;
+		dlogln("time avg: " << dt_avg);
 		//std::cout << "error: " << glGetError() << std::endl;
 
 		glfwSwapBuffers(window);

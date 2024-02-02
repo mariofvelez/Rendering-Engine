@@ -8,6 +8,8 @@
 #include "Camera.h"
 #include "../Renderer/Shader.h"
 
+#include "Debug.h"
+
 class Terrain
 {
 	std::vector<Chunk*> chunks;
@@ -444,7 +446,7 @@ public:
 			if (chunks[i]->is_empty)
 				continue;
 
-			float t1 = (float)glfwGetTime();
+			debug_start(glfwGetTime(), 1);
 
 			glm::vec3 center = chunks[i]->m_offset + glm::vec3(16.0f, 16.0f, 16.0f); // change to chunk::x_length / 2.0f etc
 			//float dist = glm::distance(center, camera->m_pos);
@@ -467,8 +469,8 @@ public:
 			//if (center.z < -1.0f)
 			//	continue;
 
-			float t2 = (float)glfwGetTime();
-			cull_time += t2 - t1;
+			debug_end(glfwGetTime(), 1);
+			cull_time += debug_time(1);
 
 			if (center.z > 1.0f)
 				continue;
@@ -496,6 +498,6 @@ public:
 			glDrawElements(GL_TRIANGLES, chunks[i]->num_elements, GL_UNSIGNED_INT, 0);
 		}
 
-		std::cout << "rendered: " << chunks_rendered << " / " << chunks_checked << " time: " << cull_time << " | ";
+		dlog("rendered: " << chunks_rendered << " / " << chunks_checked << " time: " << cull_time << " | ");
 	}
 };
