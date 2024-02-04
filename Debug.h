@@ -1,7 +1,6 @@
 #pragma once
 
 // debug commands
-#define DEBUG_LOG
 #ifdef DEBUG_LOG
 #define dlog(x) std::cout << x
 #define dlogln(x) std::cout << x << std::endl
@@ -19,5 +18,5 @@ float end_times[10];
 #define cerrln(x)
 #define debug_start(x, y)
 #define debug_end(x, y)
-#define debug_time(x)
+#define debug_time(x) 0
 #endif

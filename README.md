@@ -8,3 +8,4 @@
  - Deferred shading
  - Screen Space Ambient Occlusion (SSAO)
  - High Dynamic Range (HDR) lighting and gamma correction
+ - HDR Physically Based Bloom

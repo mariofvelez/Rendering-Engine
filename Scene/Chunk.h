@@ -142,6 +142,7 @@ public:
 		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 	}
 
+	const static glm::vec3 view_normals[6];
 
 	int m_ID;
 
@@ -158,13 +159,20 @@ public:
 
 	glm::vec3 m_offset; // offset position
 
+	bool side_occlusion[6];
+	Chunk* neighbors[6];
+
 	Chunk(glm::vec3 offset, int ID) : m_offset(offset), m_EBO(0), num_elements(0), m_VAO(0), m_ID(ID), is_empty(true)
 	{
 		for (unsigned int i = 0; i < length; ++i)
 		{
 			m_data[i] = 0;
 		}
-
+		for (unsigned int i = 0; i < 6; ++i)
+		{
+			side_occlusion[i] = false;
+			neighbors[i] = nullptr;
+		}
 	}
 	~Chunk()
 	{
@@ -357,3 +365,12 @@ const unsigned int Chunk::vertex_length;
 unsigned int Chunk::VBO;
 
 float Chunk::vertices[Chunk::vertex_length];
+
+const glm::vec3 Chunk::view_normals[] = {
+	glm::vec3( 0.0f,  0.0f, -1.0f), // bottom
+	glm::vec3( 0.0f,  0.0f,  1.0f), // top
+	glm::vec3(-1.0f,  0.0f,  0.0f), // left
+	glm::vec3( 1.0f,  0.0f,  0.0f), // right
+	glm::vec3( 0.0f, -1.0f,  0.0f), // front
+	glm::vec3( 0.0f,  1.0f,  0.0f)  // back
+};
