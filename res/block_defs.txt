@@ -1,0 +1,6 @@
+# name: shape texture (breaking properties, gravity properties, etc next)
+Grass: cube grass2.png
+Sand: cube sand.png
+Stone: cube stone.png
+Grass Blades: billboard tall_grass.png
+Tumbleweed: billboard tumbleweed.png

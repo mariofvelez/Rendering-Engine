@@ -28,8 +28,8 @@ float calcDirLightInShadow(DirLight light, vec3 pos)
 {
 	vec4 light_coords = light.shadow_view * vec4(pos, 1.0);
 	float cascade_level = 0;
-	for (int i = 0; i < 3; ++i)
-		cascade_level = pos.z > cascaded_depths[i] ? i : cascade_level;
+	//for (int i = 0; i < 3; ++i)
+		//cascade_level = pos.z > cascaded_depths[i] ? i : cascade_level;
 	float light_depth = texture(light.shadow_map, vec3(light_coords.xy, cascade_level)).x;
 	return light_depth < light_coords.z + shadow_bias ? 1.0 : 0.0;
 }

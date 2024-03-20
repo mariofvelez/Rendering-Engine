@@ -142,6 +142,7 @@ public:
 		const unsigned int log = 8;
 		const unsigned int shallow_water = 9;
 		const unsigned int deep_water = 10;
+		const unsigned int lantern = 11;
 
 		const float cave_mask_min = 0.2f;
 		const float cave_mask_max = 0.6f;
@@ -163,7 +164,7 @@ public:
 
 				float cave_mask = perlin2D(x + 6.7, y + 8.3, 128, 1.0f);
 
-				bool is_log = rand() % 100 == 0 && height > 32.0f && height < 48.0f;
+				bool is_log = rand() % 400 == 0 && height > 32.0f && height < 48.0f;
 				float log_bottom = height;
 				float log_top = height + 4.0f + (float)(rand() % 5);
 
@@ -257,7 +258,10 @@ public:
 					}
 					else if (is_log && cave > cave_thresh && z >= log_bottom && z <= log_top)
 					{
-						chunk->m_data[loc] = log;
+						if (z > log_top - 2)
+							chunk->m_data[loc] = lantern;
+						else
+							chunk->m_data[loc] = log;
 					}
 					
 				}

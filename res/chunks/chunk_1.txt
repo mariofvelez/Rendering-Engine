@@ -1,0 +1,8 @@
+# first values are dimensions x, y, z
+32 32 32
+# next values are chunk coordinates x, y, z (each coord is 32 bit signed int)
+0 0 0
+# next values are vertex and face count
+31415 92653
+# next values are block data (each id is a 16 bit uint). Blocks are ordered in increasing x, then y, then z
+12 32 8 15 10 4 93 12 15 21 16 ...

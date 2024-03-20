@@ -100,7 +100,7 @@ int main()
 
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	
-	Camera* camera = new Camera(glm::vec3(0.0f, -30.0f, 68.0f),
+	Camera* camera = new Camera(glm::vec3(0.0f, 0.0f, 68.0f),
 								glm::vec3(0.0f, 1.0f, 0.0f),
 								glm::vec3(0.0f, 0.0f, 1.0f));
 	
@@ -109,7 +109,7 @@ int main()
 	//Scene* scene = new Scene(camera);
 
 	// add light
-	DirLight* light = new DirLight(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::normalize(glm::vec3(0.3f, 0.4f, -1.0f)), 0.01f, false);
+	DirLight* light = new DirLight(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::normalize(glm::vec3(0.3f, 0.4f, -1.0f)), 0.01f, false);
 	
 	/*light->uniformShader(scene->shader, "dirlight");
 
@@ -221,9 +221,10 @@ int main()
 		"res/darkstone.png",
 		"res/log.png",
 		"res/water_temp3.png",
-		"res/water_temp4.png"
+		"res/water_temp4.png",
+		"res/lantern.png"
 	};
-	Chunk::createTextureArray(filenames, 10, terrain->terrain_shader);
+	Chunk::createTextureArray(filenames, 11, terrain->terrain_shader);
 	Chunk::createVertexBuffer();
 
 	for (int x = -2; x < 2; ++x)
@@ -250,7 +251,7 @@ int main()
 	}
 	chunk->updateMesh();*/
 
-	bool running = true;
+	bool running = false;
 	bool* running_ptr = &running;
 	std::thread update_chunk_thread([running_ptr, terrain]() {
 
@@ -469,7 +470,7 @@ int main()
 	Shader* bloom_downsample_shader = new Shader("Shaders/LightingVertex.shader", "Shaders/BloomDownsamplingFragment.shader");
 	Shader* bloom_upsample_shader = new Shader("Shaders/LightingVertex.shader", "Shaders/BloomUpsamplingFragment.shader");
 
-	const unsigned int num_bloom_mips = 5;
+	const unsigned int num_bloom_mips = 8;
 	bool bloom_buffer_status = bloom_buffer.init(screen_width, screen_height, num_bloom_mips);
 	if (!bloom_buffer_status)
 	{
@@ -585,12 +586,18 @@ int main()
 		*/
 		camera->updateCSM(lighting_shader, light->shadow_matrices, light);
 
+		glViewport(0, 0, light->shadow_width, light->shadow_height);
+		glBindFramebuffer(GL_FRAMEBUFFER, light->shadow_fbo);
 		for (int i = 0; i < light->num_cascades; ++i)
 		{
+			glClear(GL_DEPTH_BUFFER_BIT);
+
 			glm::mat4& view = light->shadow_matrices[i];
 
 			// terrain->draw(view);
 		}
+
+		glViewport(0, 0, screen_width, screen_height);
 
 		// lighting
 		glBindFramebuffer(GL_FRAMEBUFFER, lighting_buffer);
@@ -617,6 +624,8 @@ int main()
 		glActiveTexture(GL_TEXTURE5);
 		glBindTexture(GL_TEXTURE_2D, hdr_color);
 
+		bloom_downsample_shader->setVec3("threshold", 1.0f, 1.0f, 1.0f);
+
 		for (unsigned int i = 0; i < mip_chain.size(); ++i)
 		{
 			const BloomMip& mip = mip_chain[i];
@@ -626,6 +635,7 @@ int main()
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 
 			bloom_downsample_shader->setVec2("srcResolution", mip.size);
+			bloom_downsample_shader->setVec3("threshold", 0.0f, 0.0f, 0.0f);
 
 			glBindTexture(GL_TEXTURE_2D, mip.texture);
 		}

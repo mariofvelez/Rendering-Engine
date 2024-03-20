@@ -6,6 +6,7 @@ in vec2 TexCoord;
 
 uniform sampler2D srcTexture;
 uniform vec2 srcResolution;
+uniform vec3 threshold;
 
 void main()
 {
@@ -34,4 +35,5 @@ void main()
     downsample += (a + c + g + i) * 0.03125;
     downsample += (b + d + f + h) * 0.0625;
     downsample += (j + k + l + m) * 0.125;
+    downsample -= threshold;
 }
