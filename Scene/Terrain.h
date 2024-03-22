@@ -268,6 +268,74 @@ public:
 			}
 		}
 	}
+	void generateTerrain2(Chunk* chunk)
+	{
+		const unsigned int grass = 1;
+		const unsigned int sand = 2;
+		const unsigned int stone = 3;
+		const unsigned int snow = 4;
+		const unsigned int mud = 5;
+		const unsigned int magma = 6;
+		const unsigned int darkstone = 7;
+		const unsigned int log = 8;
+		const unsigned int shallow_water = 9;
+		const unsigned int deep_water = 10;
+		const unsigned int lantern = 11;
+
+		srand(chunk->m_ID);
+		float x_offs = (rand() % 10000) / 10.0f;
+		float y_offs = (rand() % 10000) / 10.0f;
+		float z_offs = (rand() % 10000) / 10.0f;
+
+		for (int py = 0; py < Chunk::y_length; ++py)
+		{
+			float y = (float)py + chunk->m_offset.y;
+			for (int px = 0; px < Chunk::x_length; ++px)
+			{
+				float x = (float)px + chunk->m_offset.x;
+				for (int pz = 0; pz < Chunk::z_length; pz++)
+				{
+					float z = (float)pz + chunk->m_offset.z;
+
+					int loc = pz * Chunk::y_length * Chunk::x_length + py * Chunk::x_length + px;
+
+					float cave = perlin3D(x + x_offs, y + y_offs, z + z_offs, 32, 16.0f);
+					cave += perlin3D(x + 17.3f, y + 55.8f, z + 29.5f, 8, 4.0f);
+
+					if (cave < 10)
+					{
+						chunk->m_data[loc] = stone;
+					}
+					else if (z < 5)
+						chunk->m_data[loc] = shallow_water;
+				}
+			}
+		}
+
+		for (int py = 0; py < Chunk::y_length; ++py)
+		{
+			float y = (float)py + chunk->m_offset.y;
+			for (int px = 0; px < Chunk::x_length; ++px)
+			{
+				float x = (float)px + chunk->m_offset.x;
+				for (int pz = 0; pz < Chunk::z_length - 1; pz++)
+				{
+					float z = (float)pz + chunk->m_offset.z;
+
+					int loc = pz * Chunk::y_length * Chunk::x_length + py * Chunk::x_length + px;
+					int above = (pz + 1) * Chunk::y_length * Chunk::x_length + py * Chunk::x_length + px;
+
+					if (chunk->m_data[loc] == stone && chunk->m_data[above] == 0)
+					{
+						if (z < 10)
+							chunk->m_data[loc] = sand;
+						else
+							chunk->m_data[loc] = grass;
+					}
+				}
+			}
+		}
+	}
 	int getChunkID(int x, int y, int z)
 	{
 		return (z - 64) * 128 * 128 + (y - 64) * 128 + (x - 64);
@@ -279,7 +347,7 @@ public:
 			(float)pz * Chunk::z_length),
 			getChunkID(px, py, pz));
 
-		generateTerrain(chunk);
+		generateTerrain2(chunk);
 		chunk->updateMesh();
 		//chunk->createBufferData();
 

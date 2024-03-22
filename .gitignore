@@ -5,3 +5,5 @@ glad.c
 *.tlog
 x64
 x86
+ImGui
+imgui.ini
